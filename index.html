@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>星空メッセージAR (Firebase完全連動版)</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            touch-action: manipulation;
+            /* ←これを追加！ズームなどを防ぎ、タップを超高速化します */
+        }
+
+        #dark-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        #message-ui {
+            position: absolute;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
+            text-align: center;
+        }
+
+        #message-ui.active {
+            bottom: 40px;
+        }
+
+        #like-btn {
+            background: #ffebee;
+            color: #d32f2f;
+            border: 2px solid #ffcdd2;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin-right: 10px;
+        }
+
+        #like-btn:active {
+            transform: scale(0.9);
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        #open-post-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: #E0FFFF;
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            box-shadow: 0 0 15px rgba(224, 255, 255, 0.6);
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        #post-ui {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 20;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #post-ui.active {
+            display: flex;
+        }
+
+        #new-msg-input {
+            width: 80%;
+            max-width: 300px;
+            height: 100px;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .btn-group button {
+            padding: 12px 25px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #submit-btn {
+            background: #E0FFFF;
+            color: #333;
+        }
+
+        #cancel-btn {
+            background: #666;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="dark-overlay"></div>
+
+    <div id="message-ui">
+        <h3 style="margin-top:0;">星のメッセージ</h3>
+        <p id="msg-text"></p>
+        <div>
+            <button id="like-btn">❤️ <span id="like-count">0</span></button>
+            <button id="close-btn" class="action-btn">閉じる</button>
+        </div>
+    </div>
+
+    <button id="open-post-btn">＋</button>
+    <div id="post-ui">
+        <h3 style="color: white; margin-bottom: 20px;">旅の思い出を残す</h3>
+        <textarea id="new-msg-input" placeholder="ここにおすすめの場所や思い出を書いてください..."></textarea>
+        <div class="btn-group">
+            <button id="cancel-btn">やめる</button>
+            <button id="submit-btn">星にする</button>
+        </div>
+    </div>
+
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" cursor="rayOrigin: mouse"
+        raycaster="objects: .clickable">
+        <a-camera></a-camera>
+    </a-scene>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        // データベース（Firestore）を操作するための機能をインポート
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, increment }
+            from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 🚨ここを自分のFirebaseプロジェクトの設定に書き換えてください🚨
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzs2E9PCk_1uujg0ROvMLd5GNNHYLOCqc",
+            authDomain: "ar-star-message.firebaseapp.com",
+            projectId: "ar-star-message",
+            storageBucket: "ar-star-message.firebasestorage.app",
+            messagingSenderId: "674722036030",
+            appId: "1:674722036030:web:bbe18941dd3d294f13d46f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- UIの取得 ---
+        const scene = document.querySelector('a-scene');
+        const messageUi = document.getElementById('message-ui');
+        const msgText = document.getElementById('msg-text');
+        const likeCountText = document.getElementById('like-count');
+        let currentStarId = null; // 現在開いている星のID
+
+        // --- 距離感の調整（より遠く、広く） ---
+        function getRandomPosition() {
+            const x = (Math.random() - 0.5) * 16; // 左右に広く（-8 〜 +8）
+            const y = 3 + Math.random() * 5;      // 高く（3 〜 8）
+            const z = -4 - Math.random() * 8;     // より奥へ（-4 〜 -12）
+            return { x, y, z };
+        }
+
+        // --- 星を描画する関数 ---
+        function renderStar(id, data) {
+            // すでに同じ星が描画されていたら更新のために一度消す
+            const existingStar = document.getElementById(id);
+            if (existingStar) existingStar.remove();
+
+            const hitbox = document.createElement('a-entity');
+            hitbox.setAttribute('id', id);
+            hitbox.setAttribute('class', 'clickable');
+
+            // 当たり判定も距離に合わせて少し大きくする
+            hitbox.setAttribute('geometry', 'primitive: sphere; radius: 2.5');
+            hitbox.setAttribute('material', 'opacity: 0; transparent: true');
+            hitbox.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
+
+            hitbox.addEventListener('click', function () {
+                currentStarId = id; // どの星をタップしたか記憶
+                msgText.innerText = data.text;
+                likeCountText.innerText = data.likes || 0;
+                messageUi.classList.add('active');
+            });
+
+            const newStar = document.createElement('a-sphere');
+
+            // --- ★いいねの数に応じて星を巨大化 ---
+            // 基本の大きさ 0.05 に、いいね1つにつき 0.01 追加
+            const starRadius = 0.05 + ((data.likes || 0) * 0.01);
+            newStar.setAttribute('radius', starRadius.toString());
+
+            newStar.setAttribute('color', data.color || '#FFFFFF');
+            newStar.setAttribute('material', 'shader: flat;');
+
+            const randomDur = 800 + Math.random() * 500;
+            newStar.setAttribute('animation', `property: scale; dir: alternate; dur: ${randomDur}; to: 1.5 1.5 1.5; loop: true`);
+
+            hitbox.appendChild(newStar);
+            scene.appendChild(hitbox);
+
+            // もしUIが開いたまま「いいね」が更新されたら数字を書き換える
+            if (currentStarId === id) {
+                likeCountText.innerText = data.likes;
+            }
+        }
+
+        // --- Firebaseのデータをリアルタイム監視（魔法の部分） ---
+        onSnapshot(collection(db, "stars"), (snapshot) => {
+            snapshot.docs.forEach((doc) => {
+                renderStar(doc.id, doc.data());
+            });
+        });
+
+        // --- 星を投稿する（Firebaseに保存） ---
+        document.getElementById('submit-btn').addEventListener('click', async () => {
+            const text = document.getElementById('new-msg-input').value;
+            if (!text) return;
+
+            const pos = getRandomPosition();
+
+            // Firebaseにデータを保存（保存されると上のonSnapshotが自動で検知して星を描画します）
+            await addDoc(collection(db, "stars"), {
+                text: text,
+                likes: 0,
+                x: pos.x,
+                y: pos.y,
+                z: pos.z,
+                color: '#E0FFFF', // 自分で投稿した星は青白く
+                createdAt: new Date()
+            });
+
+            document.getElementById('post-ui').classList.remove('active');
+            document.getElementById('new-msg-input').value = '';
+        });
+
+        // --- いいねボタンを押した時（Firebaseの数字を増やす） ---
+        document.getElementById('like-btn').addEventListener('click', async () => {
+            if (!currentStarId) return;
+
+            // 1. スマホの記憶（ローカルストレージ）から、自分がこの星に何回いいねしたか取得
+            const storageKey = 'likes_' + currentStarId;
+            let myLikes = parseInt(localStorage.getItem(storageKey) || '0', 10);
+
+            // 2. もしすでに5回いいねしていたら、ストップ！
+            if (myLikes >= 5) {
+                // 上限であることを視覚的に伝える（ボタンを一瞬グレーにする）
+                const btn = document.getElementById('like-btn');
+                const originalBg = btn.style.background;
+                btn.style.background = '#e0e0e0';
+                setTimeout(() => { btn.style.background = originalBg; }, 300);
+                return; // ここで処理を終了し、Firebaseには送らない
+            }
+
+            // 3. 自分のいいね数をカウントアップして、スマホに保存
+            myLikes += 1;
+            localStorage.setItem(storageKey, myLikes.toString());
+
+            // 4. Firebaseのデータベースを更新（今まで通り）
+            const starRef = doc(db, "stars", currentStarId);
+            await updateDoc(starRef, {
+                likes: increment(1)
+            });
+
+            // 5. アニメーション
+            likeCountText.style.transform = "scale(1.5)";
+            setTimeout(() => { likeCountText.style.transform = "scale(1)"; }, 150);
+        });
+
+        // UIを閉じる処理など
+        document.getElementById('close-btn').addEventListener('click', () => {
+            messageUi.classList.remove('active');
+            currentStarId = null;
+        });
+        document.getElementById('open-post-btn').addEventListener('click', () => {
+            document.getElementById('post-ui').classList.add('active');
+        });
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            document.getElementById('post-ui').classList.remove('active');
+        });
+    </script>
+</body>
+
+</html>
