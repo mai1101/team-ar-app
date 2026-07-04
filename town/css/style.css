@@ -236,6 +236,11 @@ body {
 /* ===== ユーティリティ ===== */
 .hidden { display: none !important; }
 
+/* 配置モード中はフッターを非表示にして cancel ボタンと重ならないようにする */
+body:has(#placement-overlay:not(.hidden)) #footer {
+  display: none;
+}
+
 /* ===== チェキ詳細モーダル ===== */
 #cheki-modal {
   position: fixed;
