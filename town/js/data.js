@@ -111,7 +111,7 @@ function computeCardPositions(cards) {
         // ユーザーが手動配置した位置を使う
         positions[card.id] = {
           ...card.position,
-          rotation: card.rotation ?? deterministicRotation(card.id),
+          rotation: card.rotation !== undefined ? card.rotation : deterministicRotation(card.id),
         };
       } else {
         positions[card.id] = {

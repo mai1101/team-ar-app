@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, increment }
     from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// 🚨ここを自分のFirebaseプロジェクトの設定に書き換えてください🚨
+// firebase
 const firebaseConfig = {
     apiKey: "AIzaSyDzs2E9PCk_1uujg0ROvMLd5GNNHYLOCqc",
     authDomain: "ar-star-message.firebaseapp.com",
@@ -42,7 +42,7 @@ function renderStar(id, data) {
     hitbox.setAttribute('class', 'clickable');
 
     // 当たり判定も距離に合わせて少し大きくする
-    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 2.5');
+    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 1.5');
     hitbox.setAttribute('material', 'opacity: 0; transparent: true');
     hitbox.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
 

@@ -3,18 +3,35 @@
 // =====================================================================
 
 const TARGET_SRC = 'assets/targets.mind';
+const APP_VERSION = 'v8';
 
 let _targetFound = false;
 
 async function main() {
   const container = document.getElementById('ar-container');
 
+  // ── ライブラリ・スクリプト読み込み確認 ───────────────────────
+  var checks = [
+    ['THREE',    typeof THREE    !== 'undefined'],
+    ['MINDAR',   typeof window.MINDAR !== 'undefined' && !!window.MINDAR.IMAGE],
+    ['initAR',   typeof initAR   === 'function'],
+    ['addChekiMesh', typeof addChekiMesh === 'function'],
+    ['getUserCards', typeof getUserCards === 'function'],
+  ];
+  var failed = checks.filter(function(c){ return !c[1]; });
+  if (failed.length > 0) {
+    var names = failed.map(function(c){ return c[0]; }).join(', ');
+    _showFallback('スクリプト読み込みエラー ' + APP_VERSION,
+      '未定義: ' + names + '\n\nページを完全に再読み込みしてください\n（Safari: アドレスバーを引っ張って更新）');
+    return;
+  }
+
   // ── AR 初期化 ─────────────────────────────────────────────────
   try {
     await initAR(container, TARGET_SRC, _onTargetFound, _onTargetLost);
   } catch (err) {
     console.error('[AR] init failed:', err);
-    _showFallback('カメラの初期化に失敗しました', 'assets/targets.mind が正しく配置されているか、\nHTTPS 環境で開いているか確認してください。');
+    _showFallback('カメラの初期化に失敗しました ' + APP_VERSION, '【エラー詳細】\n' + String(err));
     return;
   }
 
@@ -94,7 +111,7 @@ async function main() {
   });
 
   document.getElementById('home-btn').addEventListener('click', () => {
-    // ホーム遷移（未実装 - デモでは何もしない）
+    window.location.href = '../';
   });
 
   document.getElementById('placement-cancel-btn').addEventListener('click', () => {
@@ -120,7 +137,7 @@ async function main() {
     await startAR();
   } catch (err) {
     console.error('[AR] start failed:', err);
-    _showFallback('カメラを起動できませんでした', 'カメラの使用を許可してから\nページを再読み込みしてください。');
+    _showFallback('カメラを起動できませんでした', '【エラー詳細】\n' + String(err));
   }
 }
 

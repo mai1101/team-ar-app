@@ -209,6 +209,12 @@ async function handleCheckout() {
 // ---- 初期化 ----
 document.querySelectorAll(".cottage-id").forEach((el) => (el.textContent = cottageId));
 
+// ページロード時にチェックイン済みなら after-checkin を表示
+if (localStorage.getItem(VISIT_ID_KEY)) {
+  document.getElementById("checkin-form").hidden = true;
+  document.getElementById("after-checkin").hidden = false;
+}
+
 loadMessages();
 loadVisitCount();
 
