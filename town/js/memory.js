@@ -65,6 +65,20 @@ async function loadUserCardsFromFirestore() {
       }
       return { ...d, id: doc.id };
     });
+
+    // guestId があるカードの author を users コレクションから解決
+    const guestIds = [...new Set(cards.filter(c => c.guestId).map(c => c.guestId))];
+    if (guestIds.length > 0) {
+      const userSnaps = await Promise.all(
+        guestIds.map(id => db.collection('users').doc(id).get())
+      );
+      const userMap = {};
+      userSnaps.forEach(snap => { if (snap.exists) userMap[snap.id] = snap.data().guestName; });
+      cards.forEach(card => {
+        if (card.guestId && userMap[card.guestId]) card.author = userMap[card.guestId];
+      });
+    }
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
     return cards;
   } catch (err) {

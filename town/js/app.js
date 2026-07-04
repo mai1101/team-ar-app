@@ -4,7 +4,7 @@
 
 const TARGET_SRC = 'assets/targets.mind';
 const APP_VERSION = 'v8';
-const BUILD_NUM   = 6; // プッシュごとに +1 する
+const BUILD_NUM   = 7; // プッシュごとに +1 する
 
 let _targetFound    = false;
 let _pendingLocalPos = null; // 配置ピンの AR 座標
