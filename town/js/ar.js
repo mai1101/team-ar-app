@@ -52,11 +52,43 @@ async function startAR() {
   await _arMindar.start();
   _arRunning = true;
 
-  // MindAR は start() 後にレンダラーサイズを内部で固定するため、
-  // コンテナの実サイズで上書きして黒帯を防ぐ
-  var w = _arContainer.clientWidth  || window.innerWidth;
-  var h = _arContainer.clientHeight || window.innerHeight;
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+
+  // MindAR 内部の背景メッシュ（VideoTexture）を非表示にし、
+  // DOM の <video> 要素を object-fit:cover で全画面に直接表示する。
+  // これにより横長カメラ映像の左寄り問題を回避する。
+  _arScene.traverse(function(obj) {
+    if (obj.isMesh && obj.material && obj.material.map) {
+      var img = obj.material.map.image;
+      if (img && img.nodeName === 'VIDEO') {
+        obj.visible = false;
+      }
+    }
+  });
+
+  // Three.js キャンバスを透過（ARオブジェクトのみ描画）
+  _arRenderer.setClearColor(0x000000, 0);
   _arRenderer.setSize(w, h);
+
+  // DOM video を全画面カバーとして配置
+  var video = _arContainer.querySelector('video');
+  if (video) {
+    video.style.position   = 'absolute';
+    video.style.top        = '0';
+    video.style.left       = '0';
+    video.style.width      = '100%';
+    video.style.height     = '100%';
+    video.style.objectFit  = 'cover';
+    video.style.zIndex     = '0';
+  }
+  // Three.js canvas を video の上に重ねる
+  _arRenderer.domElement.style.position = 'absolute';
+  _arRenderer.domElement.style.top      = '0';
+  _arRenderer.domElement.style.left     = '0';
+  _arRenderer.domElement.style.width    = w + 'px';
+  _arRenderer.domElement.style.height   = h + 'px';
+  _arRenderer.domElement.style.zIndex   = '1';
 
   _arRenderer.setAnimationLoop(function() { _arRenderer.render(_arScene, _arCamera); });
 }
