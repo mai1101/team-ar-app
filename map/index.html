@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>あしあと - AR MAP</title>
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- ライブラリをローカルから読み込み（CDN 障害・モバイル遅延対策） -->
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/mindar-image-three.prod.js"></script>
+</head>
+<body>
+
+  <!-- ── スプラッシュ画面（タップでカメラ開始） ── -->
+  <div id="splash">
+    <div id="splash-inner">
+      <p id="splash-app-name">星集めの宿</p>
+      <p id="splash-title">あしあと</p>
+      <p id="splash-sub">AR MAP</p>
+      <button id="splash-btn">📸 カメラを起動する</button>
+      <p id="splash-hint">地図にかざすと<br>思い出のチェキが現れます</p>
+    </div>
+  </div>
+
+  <!-- ── AR レンダリング領域 ── -->
+  <div id="ar-container"></div>
+
+  <!-- ── UI オーバーレイ ── -->
+  <div id="ui-overlay">
+    <header id="header">
+      <h1 id="app-name">星集めの宿</h1>
+      <div id="header-right">
+        <button id="reset-btn" class="hidden">↩ 元に戻す</button>
+        <span id="ar-badge">AR MAP</span>
+      </div>
+    </header>
+
+    <!-- スキャン案内（ターゲット未検出時） -->
+    <div id="scan-guide">
+      <div id="scan-guide-inner">
+        <div id="scan-icon">📸</div>
+        <p>地図にカメラをかざしてください</p>
+        <p class="hint">イラストマップを画面に収めると<br>思い出のチェキが現れます</p>
+      </div>
+    </div>
+
+    <footer id="footer">
+      <button id="home-btn">🏠 ホームに戻る</button>
+      <button id="add-memory-btn">＋ 思い出を残す</button>
+    </footer>
+  </div>
+
+  <!-- ── チェキ詳細モーダル ── -->
+  <div id="cheki-modal" class="hidden" role="dialog" aria-modal="true">
+    <div id="modal-backdrop"></div>
+    <div id="modal-content">
+      <div id="modal-cheki">
+        <div id="modal-photo"></div>
+        <div id="modal-info">
+          <p id="modal-comment"></p>
+          <p id="modal-author"></p>
+        </div>
+      </div>
+      <div id="modal-actions">
+        <button id="modal-back-btn">← 地図に戻る</button>
+        <button id="modal-edit-btn" class="hidden">✏️ 編集</button>
+        <button id="modal-delete-btn" class="hidden">🗑️ 削除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 思い出を残すフォーム ── -->
+  <div id="memory-form-modal" class="hidden" role="dialog" aria-modal="true">
+    <div id="form-backdrop"></div>
+    <div id="form-content">
+      <h2>思い出を残す</h2>
+      <div id="form-photo-area">
+        <label for="photo-input" id="photo-label">
+          <span id="photo-label-text">📷 写真を選ぶ</span>
+          <img id="photo-preview" class="hidden" alt="選択した写真">
+        </label>
+        <input type="file" id="photo-input" accept="image/*" capture="environment">
+      </div>
+      <textarea id="comment-input"
+        placeholder="一言メモを書いてください&#10;（例：夕暮れが最高でした🌅）"
+        maxlength="60"></textarea>
+      <div id="form-actions">
+        <button id="form-cancel-btn">キャンセル</button>
+        <button id="form-submit-btn">次へ：配置する →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 編集フォーム ── -->
+  <div id="edit-form-modal" class="hidden" role="dialog" aria-modal="true">
+    <div id="edit-backdrop"></div>
+    <div id="edit-content">
+      <h2>メモを編集する</h2>
+      <textarea id="edit-comment-input" maxlength="60"></textarea>
+      <div id="edit-actions">
+        <button id="edit-cancel-btn">キャンセル</button>
+        <button id="edit-submit-btn">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 配置モードオーバーレイ ── -->
+  <div id="placement-overlay" class="hidden">
+    <div id="placement-top-guide">
+      <p>チェキを置きたい場所をタップしてください</p>
+    </div>
+    <div id="placement-bottom">
+      <button id="placement-cancel-btn">キャンセル</button>
+    </div>
+  </div>
+
+  <!-- スクリプト（依存順） -->
+  <script src="js/data.js"></script>
+  <script src="js/cheki.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/memory.js"></script>
+  <script src="js/interaction.js"></script>
+  <script src="js/ar.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
