@@ -135,18 +135,6 @@ body {
   gap: 8px;
 }
 
-#ar-badge {
-  background: rgba(245,234,208,.18);
-  border: 1px solid rgba(245,234,208,.45);
-  color: #f5ead0;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .12em;
-  padding: 4px 10px;
-  border-radius: 20px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
 
 #reset-btn {
   background: rgba(245,234,208,.88);

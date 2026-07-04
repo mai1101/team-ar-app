@@ -72,9 +72,15 @@ function _onPointerMove(e) {
   const hit = new THREE.Vector3();
   if (_raycaster.ray.intersectPlane(_dragState.dragPlane, hit)) {
     const local = _anchor.group.worldToLocal(hit.clone());
-    _dragState.mesh.position.set(local.x, local.y, _dragState.startLocalPos.z + 0.005);
+    const newZ  = _dragState.startLocalPos.z + 0.005;
+    _dragState.mesh.position.set(local.x, local.y, newZ);
 
     const id = _dragState.mesh.userData.card.id;
+    const op = _dragState.mesh.userData.originalPosition;
+
+    // 点線：元位置 → 現在位置
+    showGhostLine(id, op, { x: local.x, y: local.y, z: newZ });
+
     if (!_movedIds.has(id)) {
       _movedIds.add(id);
       _dragState.mesh.userData.hasMoved = true;
@@ -125,6 +131,7 @@ function _normalizedPointer(e) {
 
 // ── 全カードを元の位置にリセット ─────────────────────────────────
 function resetAllCards() {
+  hideAllGhostLines();
   let delay = 0;
   getChekiMeshes().forEach(mesh => {
     if (!mesh.userData.hasMoved) return;
