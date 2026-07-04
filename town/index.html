@@ -110,10 +110,13 @@
   <!-- ── 配置モードオーバーレイ ── -->
   <div id="placement-overlay" class="hidden">
     <div id="placement-top-guide">
-      <p>チェキを置きたい場所をタップしてください</p>
+      <p id="placement-guide-text">地図をタップして場所を選んでください</p>
     </div>
+    <!-- タップ位置に表示するピン -->
+    <div id="placement-pin" class="hidden"></div>
     <div id="placement-bottom">
       <button id="placement-cancel-btn">キャンセル</button>
+      <button id="placement-confirm-btn" class="hidden">ここにする！</button>
     </div>
   </div>
 

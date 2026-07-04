@@ -5,7 +5,26 @@
 const TARGET_SRC = 'assets/targets.mind';
 const APP_VERSION = 'v8';
 
-let _targetFound = false;
+let _targetFound    = false;
+let _pendingLocalPos = null; // 配置ピンの AR 座標
+
+// ── 配置ピン表示 / リセット ───────────────────────────────────────
+function _showPlacementPin(screenX, screenY, localPos) {
+  _pendingLocalPos = localPos;
+  const pin = document.getElementById('placement-pin');
+  pin.style.left = screenX + 'px';
+  pin.style.top  = screenY + 'px';
+  pin.classList.remove('hidden');
+  document.getElementById('placement-confirm-btn').classList.remove('hidden');
+  document.getElementById('placement-guide-text').textContent = 'タップで場所を変更できます';
+}
+
+function _resetPlacementPin() {
+  _pendingLocalPos = null;
+  document.getElementById('placement-pin').classList.add('hidden');
+  document.getElementById('placement-confirm-btn').classList.add('hidden');
+  document.getElementById('placement-guide-text').textContent = '地図をタップして場所を選んでください';
+}
 
 async function main() {
   const container = document.getElementById('ar-container');
@@ -86,7 +105,8 @@ async function main() {
 
   // ── 思い出フォーム ────────────────────────────────────────────
   initMemoryForm(pendingCard => {
-    // フォーム送信後 → 配置モードへ
+    // フォーム送信後 → 配置モードへ（前回ピンをリセット）
+    _resetPlacementPin();
     enterPlacementMode(pendingCard, async placedCard => {
       // 配置確定後にメッシュを追加
       const pos = {
@@ -114,14 +134,24 @@ async function main() {
     window.location.href = '../';
   });
 
+  // キャンセル
   document.getElementById('placement-cancel-btn').addEventListener('click', () => {
     exitPlacementMode();
+    _resetPlacementPin();
   });
 
-  // 配置モード中のタップ
+  // ここにする！（ピン確定）
+  document.getElementById('placement-confirm-btn').addEventListener('click', () => {
+    if (!_pendingLocalPos) return;
+    confirmPlacement(_pendingLocalPos);
+    _resetPlacementPin();
+  });
+
+  // 配置モード中のタップ → ピンを表示
   document.getElementById('placement-overlay').addEventListener('click', e => {
     if (!isPlacementMode()) return;
     if (e.target.id === 'placement-cancel-btn') return;
+    if (e.target.id === 'placement-confirm-btn') return;
     if (!_targetFound) {
       alert('地図を認識できていません。地図にカメラをかざしてください。');
       return;
@@ -129,7 +159,7 @@ async function main() {
 
     const localPos = screenToAnchorLocal(e);
     if (!localPos) return;
-    confirmPlacement(localPos);
+    _showPlacementPin(e.clientX, e.clientY, localPos);
   });
 
   // ── AR 開始 ──────────────────────────────────────────────────
