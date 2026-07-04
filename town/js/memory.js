@@ -56,6 +56,17 @@ async function loadUserCardsFromFirestore() {
   }
 }
 
+// ── トースト通知 ──────────────────────────────────────────────────
+let _toastTimer = null;
+function _showToast(msg) {
+  const el = document.getElementById('save-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('visible'), 3000);
+}
+
 // ── localStorage CRUD（ローカルキャッシュとして残す） ──────────────
 function getUserCards() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -63,22 +74,27 @@ function getUserCards() {
 }
 
 async function saveUserCard(card) {
-  // localStorage に即時反映（表示をブロックしない）
+  // localStorage に即時反映（photoDataUrlは除外して容量を抑える）
+  const cardForStorage = { ...card };
+  delete cardForStorage.photoDataUrl;
   const cards = getUserCards();
   const idx = cards.findIndex(c => c.id === card.id);
-  if (idx >= 0) cards[idx] = card; else cards.push(card);
+  if (idx >= 0) cards[idx] = cardForStorage; else cards.push(cardForStorage);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
 
   // Firestore に保存（写真はリサイズして容量を抑える）
+  _showToast('保存中...');
   try {
     const data = { ...card, cottageId: _cottageId };
     if (card.photoDataUrl) {
       data.photoBytes = await photoToFirestoreBytes(card.photoDataUrl);
-      delete data.photoDataUrl;   
+      delete data.photoDataUrl;
     }
     await db.collection('spots').doc(card.id).set(data);
+    _showToast('✓ 保存しました');
   } catch (err) {
     console.error('[Firestore] 保存エラー:', err);
+    _showToast('⚠️ 保存に失敗しました');
   }
 }
 
@@ -237,14 +253,14 @@ function isPlacementMode() { return _isPlacementMode; }
 function getPendingCard()   { return _pendingCard; }
 
 // app.js から呼ばれる：タップ位置が確定したときに実行
-async function confirmPlacement(localPos) {
+function confirmPlacement(localPos) {
   if (!_pendingCard) return;
 
   _pendingCard.position = { x: localPos.x, y: localPos.y, z: 0.015 };
   _pendingCard.spot     = '__manual__';
-  await saveUserCard(_pendingCard);
 
   const card = { ..._pendingCard };
-  exitPlacementMode();
+  saveUserCard(card);        // Firestoreへの保存はバックグラウンドで実行
+  exitPlacementMode();       // UIはすぐに閉じる
   _onPlaced && _onPlaced(card);
 }

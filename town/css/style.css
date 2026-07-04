@@ -1,3 +1,24 @@
+/* ===== トースト通知 ===== */
+#save-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#save-toast.visible {
+  opacity: 1;
+}
+
 /* ===== スプラッシュ画面 ===== */
 #splash {
   position: fixed;
