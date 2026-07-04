@@ -185,11 +185,12 @@ function showGhostLine(cardId, fromPos, toPos) {
   ];
   var geo = new THREE.BufferGeometry().setFromPoints(points);
   var mat = new THREE.LineDashedMaterial({
-    color:       0x3d2b1f,
-    dashSize:    0.012,
-    gapSize:     0.008,
-    opacity:     0.55,
+    color:       0xffffff,
+    dashSize:    0.014,
+    gapSize:     0.007,
+    opacity:     0.85,
     transparent: true,
+    linewidth:   3,
   });
   var line = new THREE.Line(geo, mat);
   line.computeLineDistances();
