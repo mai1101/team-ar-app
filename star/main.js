@@ -113,7 +113,7 @@ function renderStar(id, data) {
     const hitbox = document.createElement('a-entity');
     hitbox.setAttribute('id', id);
     hitbox.setAttribute('class', 'clickable');
-    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 1.5');
+    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 1.0');
     hitbox.setAttribute('material', 'opacity: 0; transparent: true');
     hitbox.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
 
@@ -198,7 +198,12 @@ function initBackgroundStars(count = 150) {
     }
 }
 
-initBackgroundStars(100);
+const sceneEl = document.querySelector('a-scene');
+if (sceneEl.hasLoaded) {
+    initBackgroundStars(150);
+} else {
+    sceneEl.addEventListener('loaded', () => initBackgroundStars(150));
+}
 
 // --- 自力で距離を計算して星座（線）を描画する関数 ---
 function drawConstellations(starsList) {
@@ -206,14 +211,19 @@ function drawConstellations(starsList) {
     const oldLines = document.querySelectorAll('.constellation-line');
     oldLines.forEach(line => line.remove());
 
-    if (starsList.length < 2) return;
+    // 🌟 10いいね以上の「黄金の星」だけを抽出する
+    const goldenStars = starsList.filter(star => (star.likes || 0) >= 10);
 
-    const THRESHOLD = 7.0; // 星同士を結ぶ距離のしきい値
+    // 黄金の星が2つ未満なら線は引けないので終了
+    if (goldenStars.length < 2) return;
 
-    for (let i = 0; i < starsList.length; i++) {
-        for (let j = i + 1; j < starsList.length; j++) {
-            const starA = starsList[i];
-            const starB = starsList[j];
+    // 特別な星同士なので、少し離れていても繋がるようにしきい値を大きめ（15.0）に設定
+    const THRESHOLD = 15.0;
+
+    for (let i = 0; i < goldenStars.length; i++) {
+        for (let j = i + 1; j < goldenStars.length; j++) {
+            const starA = goldenStars[i];
+            const starB = goldenStars[j];
 
             const dx = starA.x - starB.x;
             const dy = starA.y - starB.y;
@@ -225,9 +235,12 @@ function drawConstellations(starsList) {
                 lineEl.setAttribute('class', 'constellation-line');
                 lineEl.setAttribute('start', `${starA.x} ${starA.y} ${starA.z}`);
                 lineEl.setAttribute('end', `${starB.x} ${starB.y} ${starB.z}`);
-                lineEl.setAttribute('color', '#87CEFA');
-                lineEl.setAttribute('opacity', '0.4');
+
+                // 🌟 黄金の星同士を繋ぐので、線も神々しいゴールドに！
+                lineEl.setAttribute('color', '#fefe87');
+                lineEl.setAttribute('opacity', '0.6');
                 lineEl.setAttribute('material', 'shader: flat; transparent: true');
+
                 sceneEl.appendChild(lineEl);
             }
         }
@@ -329,11 +342,14 @@ document.getElementById('like-btn').addEventListener('click', async () => {
 document.getElementById('close-btn').addEventListener('click', () => {
     messageUi.classList.remove('active');
     if (msgAudio) {
-        msgAudio.pause(); // 閉じたら音声を止める親切設計
+        msgAudio.pause(); // 音声を止める
         msgAudio.src = '';
+        msgAudio.style.display = 'none'; // ★これを追加：プレイヤーを隠して高さをリセット！
     }
+    msgText.innerText = ''; // テキストも消して完全に初期化
     currentStarId = null;
 });
+
 document.getElementById('open-post-btn').addEventListener('click', () => {
     document.getElementById('post-ui').classList.add('active');
 });
