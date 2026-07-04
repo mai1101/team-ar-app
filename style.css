@@ -122,6 +122,20 @@ body {
 }
 
 /* ===== フォーム ===== */
+.visit-greeting {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.visit-greeting:empty {
+  display: none;
+}
+
 .form-group {
   margin-bottom: 1.1rem;
 }

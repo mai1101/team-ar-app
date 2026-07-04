@@ -41,6 +41,36 @@ const params = new URLSearchParams(window.location.search);
 const cottageId = params.get("cottage") || "07";
 
 const VISIT_ID_KEY = "cottage_canvas_visit_id";
+const GUEST_ID_KEY = "cottage_canvas_guest_id";
+
+// ---- guestId の生成・取得 ----
+function getOrCreateGuestId() {
+  let guestId = localStorage.getItem(GUEST_ID_KEY);
+  if (!guestId) {
+    guestId = crypto.randomUUID();
+    localStorage.setItem(GUEST_ID_KEY, guestId);
+  }
+  return guestId;
+}
+
+// ---- 来訪回数を取得してあいさつ表示 ----
+async function loadVisitCount() {
+  const guestId = getOrCreateGuestId();
+  try {
+    const snapshot = await getDocs(
+      query(collection(db, "visits"), where("guestId", "==", guestId))
+    );
+    const count = snapshot.size; // 今回のチェックイン前の来訪数
+    const el = document.getElementById("visit-greeting");
+    if (count === 0) {
+      el.textContent = "はじめまして！素敵な旅を。";
+    } else {
+      el.textContent = `おかえりなさい！${count + 1}回目のご来訪ですね。`;
+    }
+  } catch (err) {
+    console.error("来訪回数取得エラー:", err);
+  }
+}
 
 // ---- 画面切替 ----
 function showScreen(id) {
@@ -119,6 +149,7 @@ async function handleCheckin() {
     const ref = await addDoc(collection(db, "visits"), {
       cottageId,
       guestName,
+      guestId: getOrCreateGuestId(),
       checkedInAt: serverTimestamp(),
       checkedOutAt: null,
     });
@@ -152,6 +183,7 @@ async function handleCheckout() {
     await addDoc(collection(db, "messages"), {
       cottageId,
       authorName,
+      guestId: getOrCreateGuestId(),
       text,
       createdAt: serverTimestamp(),
     });
@@ -178,6 +210,7 @@ async function handleCheckout() {
 document.querySelectorAll(".cottage-id").forEach((el) => (el.textContent = cottageId));
 
 loadMessages();
+loadVisitCount();
 
 document.getElementById("checkin-btn").addEventListener("click", handleCheckin);
 
