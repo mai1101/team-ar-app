@@ -168,6 +168,49 @@ function setMeshesVisible(visible) {
   _arMeshMap.forEach(function(m) { m.visible = visible; });
 }
 
+// ── 配置ピン（AR空間）────────────────────────────────────────────
+var _arPinMesh = null;
+
+function showArPin(localPos) {
+  hideArPin();
+
+  var canvas = document.createElement('canvas');
+  canvas.width = 64; canvas.height = 64;
+  var ctx = canvas.getContext('2d');
+  // 外枠の円
+  ctx.beginPath();
+  ctx.arc(32, 32, 28, 0, Math.PI * 2);
+  ctx.fillStyle = '#f5ead0';
+  ctx.fill();
+  ctx.strokeStyle = '#3d2b1f';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  // 中心の十字（チェキの真ん中を示す）
+  ctx.beginPath();
+  ctx.moveTo(32, 14); ctx.lineTo(32, 50);
+  ctx.moveTo(14, 32); ctx.lineTo(50, 32);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#3d2b1f';
+  ctx.stroke();
+
+  var texture = new THREE.CanvasTexture(canvas);
+  var geo = new THREE.PlaneGeometry(0.07, 0.07);
+  var mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false });
+  _arPinMesh = new THREE.Mesh(geo, mat);
+  _arPinMesh.position.set(localPos.x, localPos.y, 0.016);
+  _arPinMesh.renderOrder = 999;
+  _arAnchor.group.add(_arPinMesh);
+}
+
+function hideArPin() {
+  if (!_arPinMesh) return;
+  _arAnchor.group.remove(_arPinMesh);
+  _arPinMesh.geometry.dispose();
+  if (_arPinMesh.material.map) _arPinMesh.material.map.dispose();
+  _arPinMesh.material.dispose();
+  _arPinMesh = null;
+}
+
 // ── アクセサ ─────────────────────────────────────────────────────
 function getChekiMeshes() { return _arMeshMap; }
 function getAnchor()      { return _arAnchor;  }

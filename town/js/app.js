@@ -4,8 +4,25 @@
 
 const TARGET_SRC = 'assets/targets.mind';
 const APP_VERSION = 'v8';
+const BUILD_NUM   = 2; // プッシュごとに +1 する
 
-let _targetFound = false;
+let _targetFound    = false;
+let _pendingLocalPos = null; // 配置ピンの AR 座標
+
+// ── 配置ピン表示 / リセット ───────────────────────────────────────
+function _showPlacementPin(screenX, screenY, localPos) {
+  _pendingLocalPos = localPos;
+  showArPin(localPos); // AR空間にピンを追加（地図と一緒に動く）
+  document.getElementById('placement-confirm-btn').classList.remove('hidden');
+  document.getElementById('placement-guide-text').textContent = 'タップで場所を変更できます';
+}
+
+function _resetPlacementPin() {
+  _pendingLocalPos = null;
+  hideArPin();
+  document.getElementById('placement-confirm-btn').classList.add('hidden');
+  document.getElementById('placement-guide-text').textContent = '地図をタップして場所を選んでください';
+}
 
 async function main() {
   const container = document.getElementById('ar-container');
@@ -86,7 +103,8 @@ async function main() {
 
   // ── 思い出フォーム ────────────────────────────────────────────
   initMemoryForm(pendingCard => {
-    // フォーム送信後 → 配置モードへ
+    // フォーム送信後 → 配置モードへ（前回ピンをリセット）
+    _resetPlacementPin();
     enterPlacementMode(pendingCard, async placedCard => {
       // 配置確定後にメッシュを追加
       const pos = {
@@ -114,22 +132,37 @@ async function main() {
     window.location.href = '../';
   });
 
-  document.getElementById('placement-cancel-btn').addEventListener('click', () => {
+  // キャンセル（pointerdown で確実に反応、overlay への伝播を止める）
+  document.getElementById('placement-cancel-btn').addEventListener('pointerdown', e => {
+    e.stopPropagation();
     exitPlacementMode();
+    _resetPlacementPin();
   });
 
-  // 配置モード中のタップ
-  document.getElementById('placement-overlay').addEventListener('click', e => {
+  // ここにする！（pointerdown で確実に反応、overlay への伝播を止める）
+  document.getElementById('placement-confirm-btn').addEventListener('pointerdown', e => {
+    e.stopPropagation();
+    if (!_pendingLocalPos) return;
+    confirmPlacement(_pendingLocalPos);
+    _resetPlacementPin();
+  });
+
+  // 配置モード中のタップ → ピンを表示
+  // click は iOS 透明要素で発火しない場合があるため pointerdown を使う
+  document.getElementById('placement-overlay').addEventListener('pointerdown', e => {
     if (!isPlacementMode()) return;
-    if (e.target.id === 'placement-cancel-btn') return;
+    if (e.target.closest('button')) return; // ボタン類はそちらに任せる
+
     if (!_targetFound) {
-      alert('地図を認識できていません。地図にカメラをかざしてください。');
+      const guide = document.getElementById('placement-guide-text');
+      guide.textContent = '⚠️ 地図にカメラをかざしてください';
+      setTimeout(() => { guide.textContent = '地図をタップして場所を選んでください'; }, 2000);
       return;
     }
 
     const localPos = screenToAnchorLocal(e);
     if (!localPos) return;
-    confirmPlacement(localPos);
+    _showPlacementPin(e.clientX, e.clientY, localPos);
   });
 
   // ── AR 開始 ──────────────────────────────────────────────────
@@ -165,6 +198,8 @@ function _showFallback(title, hint) {
 // スプラッシュのボタンタップ（ユーザージェスチャー）後に AR を開始する
 // モバイルブラウザはユーザー操作なしのカメラ起動を拒否するため
 window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('splash-sub').textContent = 'AR MAP · No.' + BUILD_NUM;
+
   document.getElementById('splash-btn').addEventListener('click', async () => {
     document.getElementById('splash').classList.add('hidden');
     await main();
