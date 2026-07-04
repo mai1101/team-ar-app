@@ -12,17 +12,14 @@ let _pendingLocalPos = null; // 配置ピンの AR 座標
 // ── 配置ピン表示 / リセット ───────────────────────────────────────
 function _showPlacementPin(screenX, screenY, localPos) {
   _pendingLocalPos = localPos;
-  const pin = document.getElementById('placement-pin');
-  pin.style.left = screenX + 'px';
-  pin.style.top  = screenY + 'px';
-  pin.classList.remove('hidden');
+  showArPin(localPos); // AR空間にピンを追加（地図と一緒に動く）
   document.getElementById('placement-confirm-btn').classList.remove('hidden');
   document.getElementById('placement-guide-text').textContent = 'タップで場所を変更できます';
 }
 
 function _resetPlacementPin() {
   _pendingLocalPos = null;
-  document.getElementById('placement-pin').classList.add('hidden');
+  hideArPin();
   document.getElementById('placement-confirm-btn').classList.add('hidden');
   document.getElementById('placement-guide-text').textContent = '地図をタップして場所を選んでください';
 }
@@ -135,14 +132,16 @@ async function main() {
     window.location.href = '../';
   });
 
-  // キャンセル
-  document.getElementById('placement-cancel-btn').addEventListener('click', () => {
+  // キャンセル（pointerdown で確実に反応、overlay への伝播を止める）
+  document.getElementById('placement-cancel-btn').addEventListener('pointerdown', e => {
+    e.stopPropagation();
     exitPlacementMode();
     _resetPlacementPin();
   });
 
-  // ここにする！（ピン確定）
-  document.getElementById('placement-confirm-btn').addEventListener('click', () => {
+  // ここにする！（pointerdown で確実に反応、overlay への伝播を止める）
+  document.getElementById('placement-confirm-btn').addEventListener('pointerdown', e => {
+    e.stopPropagation();
     if (!_pendingLocalPos) return;
     confirmPlacement(_pendingLocalPos);
     _resetPlacementPin();
