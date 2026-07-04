@@ -2,8 +2,27 @@
 // memory.js  ─  ユーザー投稿チェキの保存・フォームUI・配置モード
 // =====================================================================
 
-const STORAGE_KEY = 'ashiato_user_cards_v1';
-const _cottageId  = new URLSearchParams(window.location.search).get('cottage') || '07';
+const STORAGE_KEY   = 'ashiato_user_cards_v1';
+const _cottageId    = new URLSearchParams(window.location.search).get('cottage') || '07';
+const GUEST_ID_KEY  = 'cottage_canvas_guest_id';
+const GUEST_NAME_KEY = 'cottage_canvas_guest_name';
+
+// ── チェックイン済みのゲスト名を取得 ─────────────────────────────────
+// localStorage → Firestore の順で探す。未チェックインなら 'ゲスト'
+async function _getGuestAuthor() {
+  const name = localStorage.getItem(GUEST_NAME_KEY);
+  if (name) return name;
+  const guestId = localStorage.getItem(GUEST_ID_KEY);
+  if (!guestId) return 'ゲスト';
+  try {
+    const snap = await db.collection('users').doc(guestId).get();
+    if (snap.exists) {
+      const n = snap.data().guestName;
+      if (n) { localStorage.setItem(GUEST_NAME_KEY, n); return n; }
+    }
+  } catch (e) { console.warn('[Firestore] users lookup failed', e); }
+  return 'ゲスト';
+}
 
 // ── 写真をリサイズして Firestore に入る大きさにする ─────────────────
 function _resizePhoto(dataUrl, maxW, maxH) {
@@ -86,6 +105,8 @@ async function saveUserCard(card) {
   _showToast('保存中...');
   try {
     const data = { ...card, cottageId: _cottageId };
+    const guestId = localStorage.getItem(GUEST_ID_KEY);
+    if (guestId) data.guestId = guestId;
     if (card.photoDataUrl) {
       data.photoBytes = await photoToFirestoreBytes(card.photoDataUrl);
       delete data.photoDataUrl;
@@ -145,7 +166,7 @@ function initMemoryForm(onPlacementReady) {
   document.getElementById('form-backdrop').addEventListener('click', hideMemoryForm);
 
   // 送信 → 配置モードへ
-  document.getElementById('form-submit-btn').addEventListener('click', () => {
+  document.getElementById('form-submit-btn').addEventListener('click', async () => {
     const comment = document.getElementById('comment-input').value.trim();
     if (!comment) {
       alert('一言メモを入力してください');
@@ -157,11 +178,13 @@ function initMemoryForm(onPlacementReady) {
       ? null
       : photoPreviewEl.src;
 
+    const author = await _getGuestAuthor();
+
     _pendingCard = {
       id:           `user-${Date.now()}`,
       spot:         null,
       comment,
-      author:       'あなた・たった今',
+      author,
       photoDataUrl,
       colors:       ['#c8a882', '#e8d5b8'],
       icon:         photoDataUrl ? null : 'user-default',
