@@ -4,6 +4,7 @@
 
 const TARGET_SRC = 'assets/targets.mind';
 const APP_VERSION = 'v8';
+const BUILD_NUM   = 1; // プッシュごとに +1 する
 
 let _targetFound    = false;
 let _pendingLocalPos = null; // 配置ピンの AR 座標
@@ -198,6 +199,8 @@ function _showFallback(title, hint) {
 // スプラッシュのボタンタップ（ユーザージェスチャー）後に AR を開始する
 // モバイルブラウザはユーザー操作なしのカメラ起動を拒否するため
 window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('splash-sub').textContent = 'AR MAP · No.' + BUILD_NUM;
+
   document.getElementById('splash-btn').addEventListener('click', async () => {
     document.getElementById('splash').classList.add('hidden');
     await main();
