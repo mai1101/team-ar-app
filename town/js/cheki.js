@@ -437,6 +437,14 @@ function _buildUserPhotoCanvas(img, card) {
   return canvas;
 }
 
+function _formatCardDate(timestamp) {
+  if (!timestamp) return '';
+  const d     = new Date(timestamp);
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) return '今日';
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 function _paintCheki(ctx, card, photoImg) {
   const pad  = 8;
   const phW  = CANVAS_W - pad*2;
@@ -466,14 +474,26 @@ function _paintCheki(ctx, card, photoImg) {
   }
   ctx.restore();
 
-  // コメントテキスト
+  // コメントテキスト（最大2行）
   ctx.fillStyle = '#3d2b1f';
-  ctx.font = `12px 'Hiragino Mincho ProN', serif`;
+  ctx.font = `11px 'Hiragino Mincho ProN', serif`;
   ctx.textBaseline = 'top';
   const lines = wrapText(ctx, card.comment, phW - 4);
-  lines.forEach((ln, i) => {
-    ctx.fillText(ln, pad, PHOTO_H + pad + 8 + i * 17);
+  lines.slice(0, 2).forEach((ln, i) => {
+    ctx.fillText(ln, pad, PHOTO_H + pad + 6 + i * 15);
   });
+
+  // 投稿者名（左）・日付（右）
+  const authorName = card.author ? card.author.split('・')[0] : '';
+  const dateStr    = _formatCardDate(card.createdAt);
+  ctx.fillStyle    = '#aaa';
+  ctx.font         = `9px 'Hiragino Mincho ProN', serif`;
+  ctx.textBaseline = 'bottom';
+  ctx.textAlign    = 'left';
+  ctx.fillText(authorName, pad, CANVAS_H - pad);
+  ctx.textAlign    = 'right';
+  ctx.fillText(dateStr, CANVAS_W - pad, CANVAS_H - pad);
+  ctx.textAlign    = 'left';
 }
 
 // ── モーダル用大きい Canvas（写真エリアのみ・3倍解像度）──────────
