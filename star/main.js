@@ -25,9 +25,9 @@ let currentStarId = null; // 現在開いている星のID
 
 // --- 距離感の調整（より遠く、広く） ---
 function getRandomPosition() {
-    const x = (Math.random() - 0.5) * 16; // 左右に広く（-8 〜 +8）
-    const y = 3 + Math.random() * 5;      // 高く（3 〜 8）
-    const z = -4 - Math.random() * 8;     // より奥へ（-4 〜 -12）
+    const x = (Math.random() - 0.5) * 20; // 左右に広く（-8 〜 +8）
+    const y = 5 + Math.random() * 5;      // 高く（3 〜 8）
+    const z = -4 - Math.random() * 6;     // より奥へ（-4 〜 -12）
     return { x, y, z };
 }
 
@@ -61,9 +61,9 @@ function renderStar(id, data) {
     const starRadius = 0.05 + (likesCount * 0.01);
     newStar.setAttribute('radius', starRadius.toString());
 
-    // 🌟 3いいね以上なら「黄金の星」に進化！
-    if (likesCount >= 3) {
-        newStar.setAttribute('color', '#FFD700'); // まばゆいゴールド
+    // 🌟 10いいね以上なら「黄金の星」に進化！
+    if (likesCount >= 10) {
+        newStar.setAttribute('color', '#fefe87'); // まばゆいゴールド
         newStar.setAttribute('material', 'shader: flat; metalness: 0.8; roughness: 0.2;'); // 少しリッチな質感
         // 特別感を出すために、ゆっくり回転するアニメーションを追加
         newStar.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
