@@ -5,6 +5,7 @@ import {
   addDoc,
   getDocs,
   doc,
+  getDoc,
   updateDoc,
   orderBy,
   limit,
@@ -249,11 +250,28 @@ async function handleCheckout() {
 // ---- 初期化 ----
 document.querySelectorAll(".cottage-id").forEach((el) => (el.textContent = cottageId));
 
-// ページロード時にチェックイン済みなら after-checkin を表示
-if (localStorage.getItem(VISIT_ID_KEY)) {
-  document.getElementById("checkin-form").hidden = true;
-  document.getElementById("after-checkin").hidden = false;
+// ページロード時にチェックイン中かどうか Firestore で確認して状態を復元
+async function restoreCheckinState() {
+  const visitId = localStorage.getItem(VISIT_ID_KEY);
+  if (!visitId) return;
+
+  try {
+    const visitDoc = await getDoc(doc(db, "visits", visitId));
+    if (visitDoc.exists() && visitDoc.data().checkedOutAt === null) {
+      // まだチェックアウトしていない → チェックイン後の表示に戻す
+      document.getElementById("checkin-form").hidden = true;
+      document.getElementById("after-checkin").hidden = false;
+    } else {
+      // チェックアウト済み or ドキュメントが存在しない → リセット
+      localStorage.removeItem(VISIT_ID_KEY);
+    }
+  } catch (err) {
+    console.error("チェックイン状態の復元エラー:", err);
+    localStorage.removeItem(VISIT_ID_KEY);
+  }
 }
+
+restoreCheckinState();
 
 loadMessages();
 loadVisitCount();
