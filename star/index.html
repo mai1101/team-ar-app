@@ -26,15 +26,17 @@
     <button id="open-post-btn">＋</button>
     <div id="post-ui">
         <h3 style="color: white; margin-bottom: 20px;">旅の思い出を残す</h3>
-        <textarea id="new-msg-input" placeholder="ここにおすすめの場所や思い出を書いてください..."></textarea>
+        <textarea id="new-msg-input" placeholder="ここに思い出を書いてください..."></textarea>
         <div class="btn-group">
             <button id="cancel-btn">やめる</button>
             <button id="submit-btn">星にする</button>
         </div>
     </div>
 
+    <a href="../index.html" class="back-button">◀ 戻る</a>
+
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" cursor="rayOrigin: mouse"
-        raycaster="objects: .clickable">
+        raycaster="objects: .clickable" vr-mode-ui="enabled: false">
         <a-camera></a-camera>
     </a-scene>
     <script type="module" src="main.js"></script>
