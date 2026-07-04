@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 // データベース（Firestore）を操作するための機能をインポート
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, increment }
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, increment, query, where }
     from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // Gemini API をブラウザで直接動かすためのライブラリを読み込む
@@ -182,6 +182,15 @@ function drawConstellationLines(constellationData, starsList) {
         });
     });
 }
+// --- URLからコテージIDを取得し、絞り込み条件（q）を作る ---
+const urlParams = new URLSearchParams(window.location.search);
+const currentCottage = urlParams.get('cottage') || 'default';
+
+const q = query(
+    collection(db, "stars"),
+    where("cottageId", "==", currentCottage)
+);
+
 // --- Firebaseのデータをリアルタイム監視（魔法の部分） ---
 onSnapshot(q, async (snapshot) => {
     const starsList = [];
@@ -191,8 +200,10 @@ onSnapshot(q, async (snapshot) => {
         starsList.push({ id: doc.id, ...doc.data() });
     });
 
-    // 処理A：星を空間に出す（今までの処理）
-    renderStars(starsList);
+    // 処理A：星を空間に出す（1個ずつ renderStar を呼び出して描画する）
+    starsList.forEach(star => {
+        renderStar(star.id, star); // 隠れバグ修正：一つずつ描画関数に渡す
+    });
 
     // 処理B：星が3つ以上あればAIを呼んで星座の線を引く！（新機能）
     if (starsList.length >= 3) {
