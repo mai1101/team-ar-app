@@ -1,14 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 // データベース（Firestore）を操作するための機能をインポート
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, increment, query, where }
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, increment }
     from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-// Gemini API をブラウザで直接動かすためのライブラリを読み込む
-import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
-
-// さっき取得したAPIキーを設定 あとで必ず破棄
-const API_KEY = "AQ.Ab8RN6L0b1fOgHZuK3rJ3prUteNNBLQ343Z3WTH6bMqU5cnxwQ"; // ★ここに自分のAPIキーを貼り付ける
-const ai = new GoogleGenerativeAI(API_KEY);
 
 // firebase
 const firebaseConfig = {
@@ -62,14 +55,25 @@ function renderStar(id, data) {
 
     const newStar = document.createElement('a-sphere');
 
-    // --- ★いいねの数に応じて星を巨大化 ---
+    // --- ★いいねの数に応じて星を巨大化＆進化 ---
+    const likesCount = data.likes || 0;
     // 基本の大きさ 0.05 に、いいね1つにつき 0.01 追加
-    const starRadius = 0.05 + ((data.likes || 0) * 0.01);
+    const starRadius = 0.05 + (likesCount * 0.01);
     newStar.setAttribute('radius', starRadius.toString());
 
-    newStar.setAttribute('color', data.color || '#FFFFFF');
-    newStar.setAttribute('material', 'shader: flat;');
+    // 🌟 3いいね以上なら「黄金の星」に進化！
+    if (likesCount >= 3) {
+        newStar.setAttribute('color', '#FFD700'); // まばゆいゴールド
+        newStar.setAttribute('material', 'shader: flat; metalness: 0.8; roughness: 0.2;'); // 少しリッチな質感
+        // 特別感を出すために、ゆっくり回転するアニメーションを追加
+        newStar.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
+    } else {
+        // 通常の星
+        newStar.setAttribute('color', data.color || '#FFFFFF');
+        newStar.setAttribute('material', 'shader: flat;');
+    }
 
+    // フワフワと大きさが変わる呼吸アニメーション（全共通）
     const randomDur = 800 + Math.random() * 500;
     newStar.setAttribute('animation', `property: scale; dir: alternate; dur: ${randomDur}; to: 1.5 1.5 1.5; loop: true`);
 
@@ -81,128 +85,15 @@ function renderStar(id, data) {
         likeCountText.innerText = data.likes;
     }
 }
-
-// 星の配列を受け取って、AIに星座を作ってもらう関数
-async function askAItoMakeConstellations(starsList) {
-    // 1. AIモデルの準備（速くて無料枠が大きい gemini-1.5-flash を使います）
-    // generationConfig で「必ずJSON形式で返してね」と制限をかけるのが最大のコツです
-    const model = ai.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        generationConfig: { responseMimeType: "application/json" }
-    });
-
-    // 2. AIに渡すための星のリスト（IDとメッセージだけ）を綺麗に整理する
-    const simplifiedStars = starsList.map(star => ({
-        id: star.id,
-        message: star.text // ★ message から text に修正！
-    }));
-
-    // 3. AIへの指示文（プロンプト）を組み立てる
-    const prompt = `
-  あなたは夜空の星々を繋ぐロマンチックな天文学者（AI）です。
-  以下の旅人たちのメッセージ（IDと内容のリスト）を読み、文脈や感情、テーマが似ているもの同士（2〜4個の星）をグループ化して、それぞれ1つの「星座」にしてください。
-  
-  【メッセージリスト】
-  ${JSON.stringify(simplifiedStars)}
-  
-  【指示】
-  ・似た想い（例：食事の感動、自然への癒やし、旅の終わりへの切なさなど）を持つ星同士を結んでください。
-  ・それぞれの星座には、センスのある「星座の名前（日本語）」をつけてください。
-  ・その星座の簡単な説明文（日本語）も作ってください。
-  ・すべての星を無理に繋ぐ必要はありません。
-  
-  【出力フォーマット】
-  必ず以下の構造のJSONオブジェクトのみを返却してください。
-  {
-    "constellations": [
-      {
-        "name": "美食と宴の星座",
-        "description": "コテージでの美味しい食事やBBQの思い出を共有した旅人たちの星が結ばれた星座。",
-        "links": [
-          {"from": "star_id_1", "to": "star_id_2"},
-          {"from": "star_id_2", "to": "star_id_5"}
-        ]
-      }
-    ]
-  }
-  `;
-
-    try {
-        // 4. AIに送信して結果を待つ
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-
-        // 返ってきた文字列を、プログラムで扱えるJSONオブジェクトに変換
-        const constellationData = JSON.parse(responseText);
-        return constellationData;
-    } catch (error) {
-        console.error("AI星座の生成に失敗:", error);
-        return null;
-    }
 }
 
-// AIが作った星座データを元に、AR空間に線を引く関数
-function drawConstellationLines(constellationData, starsList) {
-    const sceneEl = document.querySelector('a-scene');
-
-    // すでに古い線があれば一度消す（部屋のアップデート対策）
-    const oldLines = document.querySelectorAll('.constellation-line');
-    oldLines.forEach(line => line.remove());
-
-    if (!constellationData || !constellationData.constellations) return;
-
-    // 星座の数だけループ
-    constellationData.constellations.forEach(constellation => {
-        console.log(`星座誕生: ${constellation.name} - ${constellation.description}`);
-        // 画面の2D UIに「〇〇座が夜空に現れました」とテキスト表示するのもアリです！
-
-        // 星座の中の「線（リンク）」の数だけループ
-        constellation.links.forEach(link => {
-            // 繋ぐ元（from）と繋ぐ先（to）の星のデータを、座標が入った元のリストから探す
-            const starFrom = starsList.find(s => s.id === link.from);
-            const starTo = starsList.find(s => s.id === link.to);
-
-            // 両方の星が空間に存在する場合だけ線を引く
-            if (starFrom && starTo) {
-                const lineEl = document.createElement('a-line');
-                lineEl.setAttribute('class', 'constellation-line');
-
-                // 線のスタート位置とゴール位置（星の3D座標）を設定
-                lineEl.setAttribute('start', `${starFrom.x} ${starFrom.y} ${starFrom.z}`);
-                lineEl.setAttribute('end', `${starTo.x} ${starTo.y} ${starTo.z}`);
-
-                // 線の見た目（エモい光の線にするために色や透明度を設定）
-                lineEl.setAttribute('color', '#87CEFA'); // きれいな水色
-                lineEl.setAttribute('opacity', '0.6');
-                lineEl.setAttribute('material', 'shader: flat; transparent: true');
-
-                // AR空間（a-scene）に追加！
-                sceneEl.appendChild(lineEl);
-            }
-        });
-    });
-}
 // --- Firebaseのデータをリアルタイム監視（魔法の部分） ---
-// コテージの区別はせず、データベースにあるすべての星をリアルタイムに読み込みます
-onSnapshot(collection(db, "stars"), async (snapshot) => {
-    const starsList = [];
-
-    // データベースから届いた最新の星を配列にまとめる
-    snapshot.forEach(doc => {
-        starsList.push({ id: doc.id, ...doc.data() });
+onSnapshot(collection(db, "stars"), (snapshot) => {
+    snapshot.docs.forEach((doc) => {
+        renderStar(doc.id, doc.data());
     });
-
-    // 処理A：星を空間に出す（1個ずつ renderStar を呼び出して描画する）
-    starsList.forEach(star => {
-        renderStar(star.id, star);
-    });
-
-    // 処理B：星が3つ以上あればAIを呼んで星座の線を引く！
-    if (starsList.length >= 3) {
-        const aiData = await askAItoMakeConstellations(starsList);
-        drawConstellationLines(aiData, starsList);
-    }
 });
+
 // --- 星を投稿する（Firebaseに保存） ---
 document.getElementById('submit-btn').addEventListener('click', async () => {
     const text = document.getElementById('new-msg-input').value;
@@ -269,5 +160,3 @@ document.getElementById('open-post-btn').addEventListener('click', () => {
 document.getElementById('cancel-btn').addEventListener('click', () => {
     document.getElementById('post-ui').classList.remove('active');
 });
-
-
