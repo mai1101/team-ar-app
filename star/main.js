@@ -55,14 +55,25 @@ function renderStar(id, data) {
 
     const newStar = document.createElement('a-sphere');
 
-    // --- ★いいねの数に応じて星を巨大化 ---
+    // --- ★いいねの数に応じて星を巨大化＆進化 ---
+    const likesCount = data.likes || 0;
     // 基本の大きさ 0.05 に、いいね1つにつき 0.01 追加
-    const starRadius = 0.05 + ((data.likes || 0) * 0.01);
+    const starRadius = 0.05 + (likesCount * 0.01);
     newStar.setAttribute('radius', starRadius.toString());
 
-    newStar.setAttribute('color', data.color || '#FFFFFF');
-    newStar.setAttribute('material', 'shader: flat;');
+    // 🌟 3いいね以上なら「黄金の星」に進化！
+    if (likesCount >= 3) {
+        newStar.setAttribute('color', '#FFD700'); // まばゆいゴールド
+        newStar.setAttribute('material', 'shader: flat; metalness: 0.8; roughness: 0.2;'); // 少しリッチな質感
+        // 特別感を出すために、ゆっくり回転するアニメーションを追加
+        newStar.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
+    } else {
+        // 通常の星
+        newStar.setAttribute('color', data.color || '#FFFFFF');
+        newStar.setAttribute('material', 'shader: flat;');
+    }
 
+    // フワフワと大きさが変わる呼吸アニメーション（全共通）
     const randomDur = 800 + Math.random() * 500;
     newStar.setAttribute('animation', `property: scale; dir: alternate; dur: ${randomDur}; to: 1.5 1.5 1.5; loop: true`);
 
@@ -73,6 +84,7 @@ function renderStar(id, data) {
     if (currentStarId === id) {
         likeCountText.innerText = data.likes;
     }
+}
 }
 
 // --- Firebaseのデータをリアルタイム監視（魔法の部分） ---
