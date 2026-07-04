@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-// ★ 1. Bytes をインポートに追加
 import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, increment, Bytes }
     from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
@@ -21,9 +20,81 @@ const scene = document.querySelector('a-scene');
 const messageUi = document.getElementById('message-ui');
 const msgText = document.getElementById('msg-text');
 const likeCountText = document.getElementById('like-count');
-// ★ HTMLに写真表示用のimgタグがある前提（後述します）
-const msgPhoto = document.getElementById('msg-photo');
+const msgAudio = document.getElementById('msg-audio'); // 再生用プレイヤー
+
+// 録音UI関係
+const recordBtn = document.getElementById('record-btn');
+const recordStatus = document.getElementById('record-status');
+const previewAudio = document.getElementById('preview-audio');
+
 let currentStarId = null; // 現在開いている星のID
+
+
+// --- 録音ボタンのイベント設定 ---
+// 録音処理用の変数
+let mediaRecorder = null;
+let audioChunks = [];
+let audioBlob = null;
+let isRecording = false;
+let recordingTimer = null; // ★追加：10秒制限用のタイマーを記憶する変数
+
+// --- 録音ボタンのイベント設定 ---
+if (recordBtn) {
+    recordBtn.addEventListener('click', async () => {
+        if (!isRecording) {
+            // 録音開始
+            audioChunks = [];
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    previewAudio.src = audioUrl;
+                    previewAudio.style.display = 'block';
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                recordBtn.innerText = "⏹ 録音を停止 (最大10秒)";
+                recordBtn.style.background = "#333";
+                recordStatus.style.display = "inline";
+
+                // ★追加：10秒（10000ミリ秒）後に自動で停止するタイマーを始動
+                recordingTimer = setTimeout(() => {
+                    if (isRecording) {
+                        stopRecordingProcess();
+                        alert("間もなく10秒に達したため、録音を自動停止しました。");
+                    }
+                }, 10000);
+
+            } catch (err) {
+                alert("マイクの許可が必要です: " + err);
+            }
+        } else {
+            // 10秒経つ前に、手動で録音を停止した場合
+            if (recordingTimer) clearTimeout(recordingTimer); // ★タイマーを解除
+            stopRecordingProcess();
+        }
+    });
+}
+
+// ★追加：録音をストップしてUIを元に戻す共通の関数
+function stopRecordingProcess() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    isRecording = false;
+    recordBtn.innerText = "🎤 再録音する";
+    recordBtn.style.background = "#ff4757";
+    recordStatus.style.display = "none";
+}
 
 // --- 距離感の調整（より遠く、広く） ---
 function getRandomPosition() {
@@ -31,27 +102,6 @@ function getRandomPosition() {
     const y = 5 + Math.random() * 5;
     const z = -4 - Math.random() * 6;
     return { x, y, z };
-}
-
-// ★ 2. 写真をリサイズして Firestore の Bytes型 に変換する関数
-async function photoToFirestoreBytes(dataUrl, maxW = 200, maxH = 200) {
-    // リサイズ
-    const resized = await new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => {
-            const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
-            const canvas = document.createElement('canvas');
-            canvas.width = Math.round(img.width * ratio);
-            canvas.height = Math.round(img.height * ratio);
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL('image/jpeg', 0.7));
-        };
-        img.src = dataUrl;
-    });
-    // dataURL → Bytes型
-    const res = await fetch(resized);
-    const buf = await res.arrayBuffer();
-    return Bytes.fromUint8Array(new Uint8Array(buf));
 }
 
 // --- 星を描画する関数 ---
@@ -68,17 +118,17 @@ function renderStar(id, data) {
 
     hitbox.addEventListener('click', function () {
         currentStarId = id;
-        msgText.innerText = data.text;
+        msgText.innerText = data.text || (data.audioDataUrl ? "（ボイスメッセージが届いています）" : "");
         likeCountText.innerText = data.likes || 0;
 
-        // ★ 写真データがあれば表示、なければ非表示にする処理
-        if (msgPhoto) {
-            if (data.photoDataUrl) {
-                msgPhoto.src = data.photoDataUrl;
-                msgPhoto.style.display = 'block';
+        // 🔊 音声データがあればプレイヤーにセットして再生可能にする
+        if (msgAudio) {
+            if (data.audioDataUrl) {
+                msgAudio.src = data.audioDataUrl;
+                msgAudio.style.display = 'block';
             } else {
-                msgPhoto.src = '';
-                msgPhoto.style.display = 'none';
+                msgAudio.src = '';
+                msgAudio.style.display = 'none';
             }
         }
 
@@ -91,12 +141,14 @@ function renderStar(id, data) {
     const starRadius = 0.05 + (likesCount * 0.01);
     newStar.setAttribute('radius', starRadius.toString());
 
+    // 🌟 いいね進化（音声がある星は少し違う初期色にするなどもエモいです）
     if (likesCount >= 10) {
-        newStar.setAttribute('color', '#fefe87');
+        newStar.setAttribute('color', '#fefe87'); // 黄金の星
         newStar.setAttribute('material', 'shader: flat; metalness: 0.8; roughness: 0.2;');
         newStar.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
     } else {
-        newStar.setAttribute('color', data.color || '#FFFFFF');
+        // 音声付きの星は、通常の星（白）と区別して淡いピンク色（#FFB6C1）にする演出
+        newStar.setAttribute('color', data.audioDataUrl ? '#FFB6C1' : '#FFFFFF');
         newStar.setAttribute('material', 'shader: flat;');
     }
 
@@ -111,66 +163,102 @@ function renderStar(id, data) {
     }
 }
 
+// --- 自力で距離を計算して星座（線）を描画する関数 ---
+function drawConstellations(starsList) {
+    const sceneEl = document.querySelector('a-scene');
+    const oldLines = document.querySelectorAll('.constellation-line');
+    oldLines.forEach(line => line.remove());
+
+    if (starsList.length < 2) return;
+
+    const THRESHOLD = 7.0; // 星同士を結ぶ距離のしきい値
+
+    for (let i = 0; i < starsList.length; i++) {
+        for (let j = i + 1; j < starsList.length; j++) {
+            const starA = starsList[i];
+            const starB = starsList[j];
+
+            const dx = starA.x - starB.x;
+            const dy = starA.y - starB.y;
+            const dz = starA.z - starB.z;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            if (distance < THRESHOLD) {
+                const lineEl = document.createElement('a-line');
+                lineEl.setAttribute('class', 'constellation-line');
+                lineEl.setAttribute('start', `${starA.x} ${starA.y} ${starA.z}`);
+                lineEl.setAttribute('end', `${starB.x} ${starB.y} ${starB.z}`);
+                lineEl.setAttribute('color', '#87CEFA');
+                lineEl.setAttribute('opacity', '0.4');
+                lineEl.setAttribute('material', 'shader: flat; transparent: true');
+                sceneEl.appendChild(lineEl);
+            }
+        }
+    }
+}
+
 // --- Firebaseのデータをリアルタイム監視 ---
 onSnapshot(collection(db, "stars"), (snapshot) => {
+    const starsList = [];
     snapshot.docs.forEach((doc) => {
-        // ★ 4. 読み込み時：Bytes型をBase64（画像URL）に戻す
         const data = doc.data();
-        if (data.photoBytes) {
-            data.photoDataUrl = 'data:image/jpeg;base64,' + data.photoBytes.toBase64();
-            delete data.photoBytes; // メモリ節約
+        // 🔊 読み込み時：音声Bytes型をBase64（再生可能なURL）に復元
+        if (data.audioBytes) {
+            data.audioDataUrl = 'data:audio/webm;base64,' + data.audioBytes.toBase64();
+            delete data.audioBytes;
         }
-        renderStar(doc.id, data);
+        starsList.push({ id: doc.id, ...data });
     });
+
+    // すべての星を描画
+    starsList.forEach(star => {
+        renderStar(star.id, star);
+    });
+
+    // 自作アルゴリズムで星座の線を引く
+    drawConstellations(starsList);
 });
 
 // --- 星を投稿する（Firebaseに保存） ---
 document.getElementById('submit-btn').addEventListener('click', async () => {
     const text = document.getElementById('new-msg-input').value;
-    // ★ HTMLに写真選択用のinputタグがある前提
-    const photoInput = document.getElementById('photo-input');
 
-    // テキストも写真もない場合は何もしない
-    if (!text && (!photoInput || photoInput.files.length === 0)) return;
+    // テキストも録音データもない場合は終了
+    if (!text && !audioBlob) return;
 
-    // 送信ボタンを連打できないように一時的に無効化（ローディング中）
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.disabled = true;
-    submitBtn.innerText = "送信中...";
+    submitBtn.innerText = "星を生成中...";
 
     const pos = getRandomPosition();
     const data = {
-        text: text || "", // テキストが空でも写真だけ投稿できるように対応
+        text: text,
         likes: 0,
         x: pos.x,
         y: pos.y,
         z: pos.z,
-        color: '#E0FFFF',
         createdAt: new Date()
     };
 
-    // ★ 3. 保存時：写真が選ばれていたら変換して追加する
-    if (photoInput && photoInput.files.length > 0) {
-        const file = photoInput.files[0];
-        // ファイルをData URL（文字列）として読み込む
-        const photoDataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
-        // 圧縮してBytes型にする
-        data.photoBytes = await photoToFirestoreBytes(photoDataUrl);
+    // 🔊 保存時：録音データ（Blob）があればBytes型に変換して乗せる
+    if (audioBlob) {
+        const arrayBuffer = await audioBlob.arrayBuffer();
+        data.audioBytes = Bytes.fromUint8Array(new Uint8Array(arrayBuffer));
     }
 
     // Firebaseに保存
     await addDoc(collection(db, "stars"), data);
 
-    // UIを元に戻す
+    // UIと録音状態のリセット
     document.getElementById('post-ui').classList.remove('active');
     document.getElementById('new-msg-input').value = '';
-    if (photoInput) photoInput.value = ''; // 写真の選択もリセット
+    previewAudio.src = '';
+    previewAudio.style.display = 'none';
+    recordBtn.innerText = "🎤 声を録音する";
+    recordBtn.style.background = "#ff4757";
+    audioBlob = null;
     submitBtn.disabled = false;
-    submitBtn.innerText = "星を飛ばす"; // 元のボタン名に合わせてください
+    submitBtn.innerText = "星にする";
 });
 
 // --- いいねボタンを押した時 ---
@@ -180,7 +268,7 @@ document.getElementById('like-btn').addEventListener('click', async () => {
     const storageKey = 'likes_' + currentStarId;
     let myLikes = parseInt(localStorage.getItem(storageKey) || '0', 10);
 
-    if (myLikes >= 50) { // テスト用に50にしています
+    if (myLikes >= 50) { // テスト用に50上限
         const btn = document.getElementById('like-btn');
         const originalBg = btn.style.background;
         btn.style.background = '#e0e0e0';
@@ -203,6 +291,10 @@ document.getElementById('like-btn').addEventListener('click', async () => {
 // UIを閉じる処理など
 document.getElementById('close-btn').addEventListener('click', () => {
     messageUi.classList.remove('active');
+    if (msgAudio) {
+        msgAudio.pause(); // 閉じたら音声を止める親切設計
+        msgAudio.src = '';
+    }
     currentStarId = null;
 });
 document.getElementById('open-post-btn').addEventListener('click', () => {
@@ -210,4 +302,17 @@ document.getElementById('open-post-btn').addEventListener('click', () => {
 });
 document.getElementById('cancel-btn').addEventListener('click', () => {
     document.getElementById('post-ui').classList.remove('active');
+
+    if (recordingTimer) clearTimeout(recordingTimer); // ★これを追加！
+    // ...以下、既存のコードと同じ...
+    if (isRecording && mediaRecorder) {
+        mediaRecorder.stop();
+    }
+    audioBlob = null;
+    previewAudio.src = '';
+    previewAudio.style.display = 'none';
+    recordBtn.innerText = "🎤 声を録音する";
+    recordBtn.style.background = "#ff4757";
+    recordStatus.style.display = "none";
+    isRecording = false;
 });
