@@ -1,0 +1,565 @@
+/* ===== スプラッシュ画面 ===== */
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #1a1008;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#splash.hidden { display: none; }
+
+#splash-inner {
+  text-align: center;
+  color: #f5ead0;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+#splash-app-name {
+  font-size: 14px;
+  letter-spacing: .18em;
+  opacity: .65;
+}
+
+#splash-title {
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  line-height: 1;
+}
+
+#splash-sub {
+  font-size: 13px;
+  letter-spacing: .25em;
+  border: 1px solid rgba(245,234,208,.4);
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+
+#splash-btn {
+  background: #f5ead0;
+  color: #3d2b1f;
+  border: none;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 18px 40px;
+  border-radius: 16px;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: transform .15s, opacity .15s;
+  margin-top: 8px;
+}
+#splash-btn:active { transform: scale(.96); opacity: .85; }
+
+#splash-hint {
+  font-size: 13px;
+  opacity: .5;
+  line-height: 1.8;
+  margin-top: 4px;
+}
+
+/* ===== リセット & ベース ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #1a1008;
+  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Hiragino Mincho Pro', 'Georgia', serif;
+  color: #3d2b1f;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ===== AR コンテナ ===== */
+#ar-container {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+#ar-container canvas,
+#ar-container video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  display: block;
+}
+
+/* ===== UI オーバーレイ ===== */
+#ui-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+#ui-overlay > * { pointer-events: auto; }
+
+/* ===== ヘッダー ===== */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 14px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  background: linear-gradient(to bottom, rgba(26,16,8,.78) 0%, transparent 100%);
+}
+
+#app-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f5ead0;
+  letter-spacing: .06em;
+  text-shadow: 0 1px 6px rgba(0,0,0,.6);
+}
+
+#header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#ar-badge {
+  background: rgba(245,234,208,.18);
+  border: 1px solid rgba(245,234,208,.45);
+  color: #f5ead0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  padding: 4px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+#reset-btn {
+  background: rgba(245,234,208,.88);
+  border: none;
+  color: #3d2b1f;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: transform .15s, opacity .15s;
+}
+#reset-btn:active { transform: scale(.95); }
+
+/* ===== スキャン案内 ===== */
+#scan-guide {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+#scan-guide.hidden { display: none; }
+
+#scan-guide-inner {
+  text-align: center;
+  color: #f5ead0;
+  padding: 32px 40px;
+  background: rgba(26,16,8,.58);
+  border-radius: 20px;
+  border: 1px solid rgba(245,234,208,.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  max-width: 280px;
+}
+
+#scan-icon {
+  font-size: 52px;
+  margin-bottom: 16px;
+  animation: pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.1); opacity: .75; }
+}
+
+#scan-guide-inner p      { font-size: 16px; margin-bottom: 8px; line-height: 1.5; }
+#scan-guide-inner .hint  { font-size: 13px; opacity: .7; line-height: 1.7; }
+
+/* ===== フッター ===== */
+#footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(26,16,8,.72) 0%, transparent 100%);
+}
+#footer button {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform .15s, opacity .2s;
+}
+#footer button:active { transform: scale(.96); }
+
+#home-btn {
+  background: rgba(245,234,208,.18);
+  color: #f5ead0;
+  border: 1px solid rgba(245,234,208,.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#add-memory-btn {
+  background: #f5ead0;
+  color: #3d2b1f;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+
+/* ===== ユーティリティ ===== */
+.hidden { display: none !important; }
+
+/* ===== チェキ詳細モーダル ===== */
+#cheki-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(26,16,8,.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#modal-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  animation: modalIn .32s cubic-bezier(.34,1.5,.64,1) both;
+}
+@keyframes modalIn {
+  from { transform: scale(.72) translateY(18px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+#modal-cheki {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.55), 0 4px 20px rgba(0,0,0,.3);
+  overflow: hidden;
+  width: 100%;
+}
+
+#modal-photo {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #e8e0d5;
+}
+#modal-photo canvas,
+#modal-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+#modal-info {
+  padding: 14px 18px 18px;
+}
+#modal-comment {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #333;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
+#modal-author {
+  font-size: 12px;
+  color: #999;
+  text-align: right;
+  font-style: italic;
+}
+
+#modal-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+#modal-actions button {
+  flex: 1;
+  padding: 13px 8px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform .15s;
+}
+#modal-actions button:active { transform: scale(.96); }
+
+#modal-back-btn   { background: #f5ead0; color: #3d2b1f; font-weight: 700; }
+#modal-edit-btn   { background: #e8f2e8; color: #1e4d1e; }
+#modal-delete-btn { background: #fde8e8; color: #8b0000; }
+
+/* ===== 思い出フォームモーダル ===== */
+#memory-form-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+#form-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(26,16,8,.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+#form-content {
+  position: relative;
+  z-index: 1;
+  background: #faf6ee;
+  border-radius: 22px 22px 0 0;
+  padding: 28px 22px;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp .36s cubic-bezier(.34,1.2,.64,1) both;
+}
+@keyframes slideUp {
+  from { transform: translateY(110%); }
+  to   { transform: translateY(0); }
+}
+
+#form-content h2 {
+  font-size: 18px;
+  color: #3d2b1f;
+  text-align: center;
+  margin-bottom: 20px;
+  letter-spacing: .05em;
+}
+
+/* 写真選択エリア */
+#form-photo-area { margin-bottom: 14px; }
+
+#photo-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 200px;
+  border: 2px dashed #c9b89a;
+  border-radius: 14px;
+  background: #f5ead0;
+  color: #8a7260;
+  font-size: 16px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: border-color .2s;
+}
+#photo-label:active { border-color: #8a7260; }
+
+#photo-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+input[type="file"] { display: none; }
+
+#comment-input {
+  width: 100%;
+  height: 84px;
+  padding: 12px 14px;
+  border: 1.5px solid #c9b89a;
+  border-radius: 12px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  color: #3d2b1f;
+  resize: none;
+  outline: none;
+  margin-bottom: 18px;
+  line-height: 1.5;
+  transition: border-color .2s;
+}
+#comment-input:focus { border-color: #8a7260; }
+
+#form-actions {
+  display: flex;
+  gap: 10px;
+}
+#form-actions button {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform .15s;
+}
+#form-actions button:active { transform: scale(.96); }
+#form-cancel-btn  { background: #e8e0d5; color: #8a7260; }
+#form-submit-btn  { background: #3d2b1f; color: #f5ead0; font-weight: 700; }
+
+/* ===== 編集フォームモーダル ===== */
+#edit-form-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+#edit-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(26,16,8,.6);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+#edit-content {
+  position: relative;
+  z-index: 1;
+  background: #faf6ee;
+  border-radius: 22px 22px 0 0;
+  padding: 28px 22px;
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp .34s cubic-bezier(.34,1.2,.64,1) both;
+}
+#edit-content h2 {
+  font-size: 18px;
+  color: #3d2b1f;
+  text-align: center;
+  margin-bottom: 18px;
+}
+#edit-comment-input {
+  width: 100%;
+  height: 84px;
+  padding: 12px 14px;
+  border: 1.5px solid #c9b89a;
+  border-radius: 12px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  color: #3d2b1f;
+  resize: none;
+  outline: none;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+#edit-comment-input:focus { border-color: #8a7260; }
+#edit-actions { display: flex; gap: 10px; }
+#edit-actions button {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform .15s;
+}
+#edit-actions button:active { transform: scale(.96); }
+#edit-cancel-btn  { background: #e8e0d5; color: #8a7260; }
+#edit-submit-btn  { background: #3d2b1f; color: #f5ead0; font-weight: 700; }
+
+/* ===== 配置モードオーバーレイ ===== */
+#placement-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#placement-top-guide {
+  padding: 24px 20px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  background: linear-gradient(to bottom, rgba(26,16,8,.75) 0%, transparent 100%);
+  text-align: center;
+  pointer-events: none;
+}
+#placement-top-guide p {
+  color: #f5ead0;
+  font-size: 16px;
+  letter-spacing: .04em;
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+/* 十字線のヒント */
+#placement-overlay::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(245,234,208,.6);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.3);
+}
+
+#placement-bottom {
+  padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(26,16,8,.75) 0%, transparent 100%);
+  display: flex;
+  justify-content: center;
+}
+#placement-cancel-btn {
+  background: rgba(245,234,208,.22);
+  border: 1px solid rgba(245,234,208,.42);
+  color: #f5ead0;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 12px 32px;
+  border-radius: 24px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background .2s;
+}
+#placement-cancel-btn:active { background: rgba(245,234,208,.35); }
