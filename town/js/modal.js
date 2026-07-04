@@ -15,7 +15,6 @@ function initModal(onDelete, onEdit) {
 
   document.getElementById('modal-delete-btn').addEventListener('click', () => {
     if (!_currentCard) return;
-    if (!confirm('このチェキを削除しますか？')) return;
     _onDelete && _onDelete(_currentCard);
     hideChekiModal();
   });
