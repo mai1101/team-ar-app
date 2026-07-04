@@ -10,6 +10,7 @@
 
   <!-- ========== チェックイン画面 ========== -->
   <div id="screen-checkin" class="screen">
+    <div class="drawing-bg" id="drawing-bg-checkin"></div>
     <header class="app-header">
       <h1 class="app-title">🏕 コテージキャンバス</h1>
       <p class="app-cottage">コテージ No. <span class="cottage-id">--</span></p>
@@ -68,36 +69,40 @@
 
   <!-- ========== チェックアウト画面 ========== -->
   <div id="screen-checkout" class="screen" hidden>
+    <div class="drawing-bg" id="drawing-bg-checkout"></div>
     <header class="app-header">
       <h1 class="app-title">🏕 コテージキャンバス</h1>
       <p class="app-cottage">コテージ No. <span class="cottage-id">--</span></p>
     </header>
 
     <main class="container">
+      <!-- 絵を描くセクション -->
       <section class="section">
-        <h2 class="section-title">次の旅人へメッセージを残す</h2>
-
+        <h2 class="section-title">絵を描いて残す</h2>
         <div class="form-group">
           <label for="author-name" class="form-label">お名前（任意）</label>
           <input id="author-name" type="text" class="form-input" placeholder="旅人" maxlength="50" />
         </div>
-
-        <div class="form-group">
-          <label for="message-text" class="form-label">
-            メッセージ <span class="required">*</span>
-          </label>
-          <textarea
-            id="message-text"
-            class="form-textarea"
-            placeholder="このコテージで感じたこと、おすすめのスポットなど、自由に書いてください。"
-            rows="6"
-            maxlength="500"
-          ></textarea>
-          <span class="char-count"><span id="char-count-num">0</span> / 500</span>
+        <div class="canvas-toolbar">
+          <div class="color-palette">
+            <button class="color-btn active" data-color="#222222" style="background:#222222" aria-label="黒"></button>
+            <button class="color-btn" data-color="#e03333" style="background:#e03333" aria-label="赤"></button>
+            <button class="color-btn" data-color="#3366cc" style="background:#3366cc" aria-label="青"></button>
+            <button class="color-btn" data-color="#2e8b57" style="background:#2e8b57" aria-label="緑"></button>
+            <button class="color-btn" data-color="#e87c1e" style="background:#e87c1e" aria-label="オレンジ"></button>
+          </div>
+          <button id="canvas-clear-btn" class="btn btn--outline">消す</button>
         </div>
+        <canvas id="drawing-canvas"></canvas>
+        <p id="drawing-error" class="error-text"></p>
+        <button id="drawing-post-btn" class="btn btn--primary btn--full">この絵を残してチェックアウト</button>
+        <button id="skip-drawing-btn" class="btn btn--outline btn--full" style="margin-top:0.5rem">絵なしでチェックアウト</button>
+      </section>
 
-        <p id="checkout-error" class="error-text"></p>
-        <button id="checkout-btn" class="btn btn--primary btn--full">思い出を残す</button>
+      <!-- 過去の絵ギャラリー -->
+      <section class="section">
+        <h2 class="section-title">前の旅人の絵</h2>
+        <div id="drawing-gallery"></div>
       </section>
     </main>
   </div>

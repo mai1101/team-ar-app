@@ -206,44 +206,14 @@ async function handleCheckin() {
   }
 }
 
-// ---- チェックアウト ----
-async function handleCheckout() {
-  const text = document.getElementById("message-text").value.trim();
-  if (!text) return;
-
-  const btn = document.getElementById("checkout-btn");
-  const errorEl = document.getElementById("checkout-error");
-  const authorName = document.getElementById("author-name").value.trim() || "旅人";
-
-  btn.disabled = true;
-  btn.textContent = "送信中...";
-  errorEl.textContent = "";
-
-  try {
-    // メッセージ追加
-    await addDoc(collection(db, "messages"), {
-      cottageId,
-      authorName,
-      guestId: getOrCreateGuestId(),
-      text,
-      createdAt: serverTimestamp(),
+// ---- チェックアウト共通処理 ----
+async function _doCheckout() {
+  const visitId = localStorage.getItem(VISIT_ID_KEY);
+  if (visitId) {
+    await updateDoc(doc(db, "visits", visitId), {
+      checkedOutAt: serverTimestamp(),
     });
-
-    // visitのcheckedOutAtを更新
-    const visitId = localStorage.getItem(VISIT_ID_KEY);
-    if (visitId) {
-      await updateDoc(doc(db, "visits", visitId), {
-        checkedOutAt: serverTimestamp(),
-      });
-      localStorage.removeItem(VISIT_ID_KEY);
-    }
-
-    showScreen("screen-done");
-  } catch (err) {
-    console.error("チェックアウトエラー:", err);
-    errorEl.textContent = "投稿に失敗しました。もう一度お試しください。";
-    btn.disabled = false;
-    btn.textContent = "思い出を残す";
+    localStorage.removeItem(VISIT_ID_KEY);
   }
 }
 
@@ -275,6 +245,7 @@ restoreCheckinState();
 
 loadMessages();
 loadVisitCount();
+loadDrawingsBg();
 
 document.getElementById("checkin-btn").addEventListener("click", handleCheckin);
 
@@ -288,23 +259,201 @@ document.getElementById("back-from-history-btn").addEventListener("click", () =>
 });
 
 document.getElementById("go-checkout-btn").addEventListener("click", () => {
+  _clearCanvas();
   showScreen("screen-checkout");
+  loadDrawings();
 });
-
-document.getElementById("message-text").addEventListener("input", (e) => {
-  document.getElementById("char-count-num").textContent = e.target.value.length;
-});
-
-document.getElementById("checkout-btn").addEventListener("click", handleCheckout);
 
 document.getElementById("restart-btn").addEventListener("click", () => {
-  // フォームをリセット
   document.getElementById("guest-name").value = "";
   document.getElementById("author-name").value = "";
-  document.getElementById("message-text").value = "";
-  document.getElementById("char-count-num").textContent = "0";
   document.getElementById("checkin-form").hidden = false;
   document.getElementById("after-checkin").hidden = true;
   showScreen("screen-checkin");
   loadMessages();
+});
+
+// ---- 描画キャンバス ----
+const _canvas = document.getElementById("drawing-canvas");
+const _ctx    = _canvas.getContext("2d");
+const CANVAS_W = 320;
+const CANVAS_H = 200;
+_canvas.width  = CANVAS_W;
+_canvas.height = CANVAS_H;
+
+let _isDrawing    = false;
+let _currentColor = "#222222";
+
+function _clearCanvas() {
+  _ctx.fillStyle = "#ffffff";
+  _ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+}
+_clearCanvas();
+
+function _getCanvasPos(e) {
+  const rect   = _canvas.getBoundingClientRect();
+  const scaleX = CANVAS_W / rect.width;
+  const scaleY = CANVAS_H / rect.height;
+  const src    = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * scaleX,
+    y: (src.clientY - rect.top)  * scaleY,
+  };
+}
+
+function _startDraw(e) {
+  e.preventDefault();
+  _isDrawing = true;
+  const { x, y } = _getCanvasPos(e);
+  _ctx.beginPath();
+  _ctx.moveTo(x, y);
+}
+
+function _continueDraw(e) {
+  if (!_isDrawing) return;
+  e.preventDefault();
+  const { x, y } = _getCanvasPos(e);
+  _ctx.lineTo(x, y);
+  _ctx.strokeStyle = _currentColor;
+  _ctx.lineWidth   = 4;
+  _ctx.lineCap     = "round";
+  _ctx.lineJoin    = "round";
+  _ctx.stroke();
+}
+
+function _endDraw() { _isDrawing = false; }
+
+_canvas.addEventListener("mousedown",  _startDraw);
+_canvas.addEventListener("mousemove",  _continueDraw);
+_canvas.addEventListener("mouseup",    _endDraw);
+_canvas.addEventListener("mouseleave", _endDraw);
+_canvas.addEventListener("touchstart", _startDraw,    { passive: false });
+_canvas.addEventListener("touchmove",  _continueDraw, { passive: false });
+_canvas.addEventListener("touchend",   _endDraw);
+
+document.querySelectorAll(".color-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".color-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    _currentColor = btn.dataset.color;
+  });
+});
+
+document.getElementById("canvas-clear-btn").addEventListener("click", _clearCanvas);
+
+// ---- 絵を投稿してチェックアウト ----
+async function saveDrawing() {
+  const btn        = document.getElementById("drawing-post-btn");
+  const errorEl    = document.getElementById("drawing-error");
+  const authorName = document.getElementById("author-name").value.trim() || "旅人";
+
+  btn.disabled    = true;
+  btn.textContent = "送信中...";
+  errorEl.textContent = "";
+
+  try {
+    const imageData = _canvas.toDataURL("image/jpeg", 0.8);
+    await addDoc(collection(db, "drawings"), {
+      cottageId,
+      authorName,
+      imageData,
+      createdAt: serverTimestamp(),
+    });
+    await _doCheckout();
+    showScreen("screen-done");
+  } catch (err) {
+    console.error("絵の投稿エラー:", err);
+    errorEl.textContent = "投稿に失敗しました。もう一度お試しください。";
+    btn.disabled    = false;
+    btn.textContent = "この絵を残してチェックアウト";
+  }
+}
+
+// ---- 絵のギャラリー読み込み ----
+async function loadDrawings() {
+  const gallery = document.getElementById("drawing-gallery");
+  gallery.innerHTML = '<p class="loading-text">読み込み中...</p>';
+
+  try {
+    const q = query(
+      collection(db, "drawings"),
+      where("cottageId", "==", cottageId),
+      orderBy("createdAt", "desc"),
+      limit(10)
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      gallery.innerHTML = '<p class="empty-text">まだ絵がありません。最初に描いてみましょう！</p>';
+      return;
+    }
+
+    gallery.innerHTML = '<div class="drawing-gallery-grid"></div>';
+    const grid = gallery.querySelector(".drawing-gallery-grid");
+    snapshot.forEach((docSnap) => {
+      const d     = docSnap.data();
+      const div   = document.createElement("div");
+      div.className = "drawing-thumb";
+      const img   = document.createElement("img");
+      img.src     = d.imageData;
+      img.alt     = escapeHtml(d.authorName || "旅人") + "の絵";
+      const label = document.createElement("div");
+      label.className = "drawing-thumb__label";
+      label.textContent = d.authorName || "旅人";
+      div.appendChild(img);
+      div.appendChild(label);
+      grid.appendChild(div);
+    });
+  } catch (err) {
+    console.error("絵の読み込みエラー:", err);
+    gallery.innerHTML = '<p class="error-text">読み込みに失敗しました。</p>';
+  }
+}
+
+// ---- 背景に絵を散りばめる ----
+async function loadDrawingsBg() {
+  try {
+    const q = query(
+      collection(db, "drawings"),
+      where("cottageId", "==", cottageId),
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return;
+
+    const images = snapshot.docs.map((d) => d.data().imageData).filter(Boolean);
+
+    ["drawing-bg-checkin", "drawing-bg-checkout"].forEach((bgId) => {
+      const bg = document.getElementById(bgId);
+      if (!bg) return;
+      images.forEach((imageData) => {
+        const img = document.createElement("img");
+        img.src = imageData;
+        img.className = "drawing-bg-item";
+        img.style.left      = Math.random() * 80 + "%";
+        img.style.top       = Math.random() * 80 + "%";
+        img.style.transform = `rotate(${(Math.random() - 0.5) * 50}deg)`;
+        bg.appendChild(img);
+      });
+    });
+  } catch (err) {
+    console.error("背景絵の読み込みエラー:", err);
+  }
+}
+
+document.getElementById("drawing-post-btn").addEventListener("click", saveDrawing);
+
+document.getElementById("skip-drawing-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("skip-drawing-btn");
+  btn.disabled = true;
+  btn.textContent = "処理中...";
+  try {
+    await _doCheckout();
+    showScreen("screen-done");
+  } catch (err) {
+    console.error("チェックアウトエラー:", err);
+    btn.disabled = false;
+    btn.textContent = "絵なしでチェックアウト";
+  }
 });
