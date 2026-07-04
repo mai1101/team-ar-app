@@ -72,6 +72,46 @@ async function loadVisitCount() {
   }
 }
 
+// ---- 自分の過去の投稿を読み込み ----
+async function loadMyMessages() {
+  const list = document.getElementById("my-message-list");
+  list.innerHTML = '<p class="loading-text">読み込み中...</p>';
+
+  const guestId = getOrCreateGuestId();
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, "messages"),
+        where("guestId", "==", guestId),
+        orderBy("createdAt", "desc")
+      )
+    );
+
+    if (snapshot.empty) {
+      list.innerHTML = '<p class="empty-text">まだ投稿がありません。</p>';
+      return;
+    }
+
+    list.innerHTML = "";
+    snapshot.forEach((docSnap) => {
+      const d = docSnap.data();
+      const dateStr = d.createdAt?.toDate ? formatDate(d.createdAt.toDate()) : "";
+      list.innerHTML += `
+        <div class="message-card">
+          <div class="message-card__header">
+            <span class="message-card__author">${escapeHtml(d.authorName || "旅人")}</span>
+            ${dateStr ? `<span class="message-card__date">${dateStr}</span>` : ""}
+          </div>
+          ${d.cottageId ? `<span class="message-card__cottage">コテージ No.${escapeHtml(d.cottageId)}</span>` : ""}
+          <p class="message-card__text">${escapeHtml(d.text)}</p>
+        </div>`;
+    });
+  } catch (err) {
+    console.error("過去の投稿取得エラー:", err);
+    list.innerHTML = '<p class="error-text">取得に失敗しました。</p>';
+  }
+}
+
 // ---- 画面切替 ----
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach((el) => (el.hidden = true));
@@ -219,6 +259,15 @@ loadMessages();
 loadVisitCount();
 
 document.getElementById("checkin-btn").addEventListener("click", handleCheckin);
+
+document.getElementById("go-history-btn").addEventListener("click", () => {
+  loadMyMessages();
+  showScreen("screen-history");
+});
+
+document.getElementById("back-from-history-btn").addEventListener("click", () => {
+  showScreen("screen-checkin");
+});
 
 document.getElementById("go-checkout-btn").addEventListener("click", () => {
   showScreen("screen-checkout");

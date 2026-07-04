@@ -41,9 +41,27 @@
           <a href="./town/" class="btn btn--secondary">🗺 地図を見る</a>
           <a href="./star/" class="btn btn--secondary">✨ 星空を見る</a>
         </div>
+        <button id="go-history-btn" class="btn btn--outline btn--full">📖 自分の過去の投稿を見る</button>
         <button id="go-checkout-btn" class="btn btn--outline btn--full">チェックアウトへ →</button>
       </section>
 
+    </main>
+  </div>
+
+
+  <!-- ========== 過去の投稿画面 ========== -->
+  <div id="screen-history" class="screen" hidden>
+    <header class="app-header">
+      <h1 class="app-title">🏕 コテージキャンバス</h1>
+      <p class="app-cottage">コテージ No. <span class="cottage-id">--</span></p>
+    </header>
+
+    <main class="container">
+      <section class="section">
+        <h2 class="section-title">自分の過去の投稿</h2>
+        <div id="my-message-list"></div>
+      </section>
+      <button id="back-from-history-btn" class="btn btn--outline btn--full">← 戻る</button>
     </main>
   </div>
 

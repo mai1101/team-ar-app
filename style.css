@@ -104,6 +104,16 @@ body {
   flex-shrink: 0;
 }
 
+.message-card__cottage {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  background: var(--surface2);
+  border-radius: 4px;
+  padding: 0.1em 0.5em;
+  margin-bottom: 0.4rem;
+}
+
 .message-card__text {
   font-size: 0.93rem;
   white-space: pre-wrap;
