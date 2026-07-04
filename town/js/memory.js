@@ -237,14 +237,16 @@ function isPlacementMode() { return _isPlacementMode; }
 function getPendingCard()   { return _pendingCard; }
 
 // app.js から呼ばれる：タップ位置が確定したときに実行
-async function confirmPlacement(localPos) {
+function confirmPlacement(localPos) {
   if (!_pendingCard) return;
 
   _pendingCard.position = { x: localPos.x, y: localPos.y, z: 0.015 };
   _pendingCard.spot     = '__manual__';
-  await saveUserCard(_pendingCard);
 
   const card = { ..._pendingCard };
   exitPlacementMode();
-  _onPlaced && _onPlaced(card);
+  _onPlaced && _onPlaced(card); // 即座に描画
+
+  // localStorage + Firestore へは裏で保存
+  saveUserCard(card).catch(err => console.error('[Firestore] 保存エラー:', err));
 }
