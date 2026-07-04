@@ -260,7 +260,8 @@ function confirmPlacement(localPos) {
   _pendingCard.spot     = '__manual__';
 
   const card = { ..._pendingCard };
+  const onPlaced = _onPlaced; // exitPlacementMode で null になる前に退避
   saveUserCard(card);        // Firestoreへの保存はバックグラウンドで実行
   exitPlacementMode();       // UIはすぐに閉じる
-  _onPlaced && _onPlaced(card);
+  onPlaced && onPlaced(card);
 }

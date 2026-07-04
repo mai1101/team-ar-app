@@ -167,53 +167,57 @@ function removeChekiMesh(cardId) {
 // ── 全メッシュの表示 / 非表示 ────────────────────────────────────
 function setMeshesVisible(visible) {
   _arMeshMap.forEach(function(m) { m.visible = visible; });
-  _arGhostLineMap.forEach(function(line) { line.visible = visible; });
+  _arGhostLineMap.forEach(function(entry) { entry.mesh.visible = visible; });
 }
 
-// ── 元位置↔現在位置をつなぐ点線 ───────────────────────────────────
-var _arGhostLineMap = new Map(); // card.id → THREE.Line
+// ── 元位置↔現在位置をつなぐ太線（PlaneGeometry で WebGL 制限を回避）──
+var _arGhostLineMap = new Map(); // card.id → { mesh, fromPos }
+var _GHOST_THICKNESS = 0.006;   // 太さ（AR unit）
+
+function _positionGhostLine(mesh, fromPos, toPos) {
+  var dx  = toPos.x - fromPos.x;
+  var dy  = toPos.y - fromPos.y;
+  var len = Math.sqrt(dx * dx + dy * dy);
+  mesh.scale.x    = len;
+  mesh.position.set(
+    (fromPos.x + toPos.x) / 2,
+    (fromPos.y + toPos.y) / 2,
+    Math.max(fromPos.z, toPos.z) + 0.001
+  );
+  mesh.rotation.z = Math.atan2(dy, dx);
+}
 
 function showGhostLine(cardId, fromPos, toPos) {
   if (_arGhostLineMap.has(cardId)) {
-    // 既存ラインがあれば終点だけ更新
     updateGhostLine(cardId, toPos);
     return;
   }
-  var points = [
-    new THREE.Vector3(fromPos.x, fromPos.y, fromPos.z),
-    new THREE.Vector3(toPos.x,   toPos.y,   toPos.z),
-  ];
-  var geo = new THREE.BufferGeometry().setFromPoints(points);
-  var mat = new THREE.LineDashedMaterial({
+  var geo  = new THREE.PlaneGeometry(1, _GHOST_THICKNESS);
+  var mat  = new THREE.MeshBasicMaterial({
     color:       0xffffff,
-    dashSize:    0.014,
-    gapSize:     0.007,
-    opacity:     0.85,
+    opacity:     0.80,
     transparent: true,
-    linewidth:   3,
+    depthTest:   false,
   });
-  var line = new THREE.Line(geo, mat);
-  line.computeLineDistances();
-  line.renderOrder = 997;
-  _arAnchor.group.add(line);
-  _arGhostLineMap.set(cardId, line);
+  var mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 997;
+  _arAnchor.group.add(mesh);
+  _arGhostLineMap.set(cardId, { mesh: mesh, fromPos: fromPos });
+  _positionGhostLine(mesh, fromPos, toPos);
 }
 
 function updateGhostLine(cardId, toPos) {
-  var line = _arGhostLineMap.get(cardId);
-  if (!line) return;
-  var arr = line.geometry.attributes.position.array;
-  arr[3] = toPos.x; arr[4] = toPos.y; arr[5] = toPos.z;
-  line.geometry.attributes.position.needsUpdate = true;
-  line.computeLineDistances();
+  var entry = _arGhostLineMap.get(cardId);
+  if (!entry) return;
+  _positionGhostLine(entry.mesh, entry.fromPos, toPos);
 }
 
 function hideGhostLine(cardId) {
-  var line = _arGhostLineMap.get(cardId);
-  if (!line) return;
-  _arAnchor.group.remove(line);
-  line.geometry.dispose();
-  line.material.dispose();
+  var entry = _arGhostLineMap.get(cardId);
+  if (!entry) return;
+  _arAnchor.group.remove(entry.mesh);
+  entry.mesh.geometry.dispose();
+  entry.mesh.material.dispose();
   _arGhostLineMap.delete(cardId);
 }
 
