@@ -194,11 +194,74 @@ function _showFallback(title, hint) {
   guide.querySelector('.hint').textContent      = hint;
 }
 
+// ── 足跡デコレーション（Canvas描画） ────────────────────────────────
+function _drawHumanFoot(ctx, x, y, angleDeg, isRight) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angleDeg * Math.PI / 180);
+  if (isRight) ctx.scale(-1, 1);
+  ctx.fillStyle = 'rgba(80,50,20,0.68)';
+  ctx.beginPath();
+  ctx.ellipse(0, 2, 6, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  var toes = [[4.5,-9,2.2],[1.5,-12,2.5],[-1.5,-12.5,2.5],[-4,-11.5,2.2],[-5.5,-9.5,1.9]];
+  for (var i = 0; i < toes.length; i++) {
+    ctx.beginPath();
+    ctx.arc(toes[i][0], toes[i][1], toes[i][2], 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function _drawBirdFoot(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = 'rgba(80,50,20,0.68)';
+  ctx.lineWidth = 2.3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(13,0);
+  ctx.moveTo(0,0); ctx.lineTo(8,-7);
+  ctx.moveTo(0,0); ctx.lineTo(8,7);
+  ctx.moveTo(0,0); ctx.lineTo(-5,0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function _initSplashFootprints() {
+  var w = window.innerWidth;
+
+  var topCanvas = document.getElementById('splash-fp-top');
+  topCanvas.width  = w;
+  topCanvas.height = 64;
+  var tc   = topCanvas.getContext('2d');
+  var step = Math.round(w / 6.5);
+  for (var i = 0; i < 8; i++) {
+    var bx = Math.round(step * 0.4 + i * step);
+    _drawHumanFoot(tc, bx, 22, -12, false);
+    if (bx + 26 < w - 8) _drawHumanFoot(tc, bx + 26, 44, 12, true);
+  }
+
+  var botCanvas = document.getElementById('splash-fp-bottom');
+  botCanvas.width  = w;
+  botCanvas.height = 64;
+  var bc        = botCanvas.getContext('2d');
+  var birdStep  = 31;
+  var birdCount = Math.floor((w - 20) / birdStep);
+  for (var j = 0; j < birdCount; j++) {
+    _drawBirdFoot(bc, 20 + j * birdStep, 22);
+  }
+  for (var k = 0; k < birdCount - 1; k++) {
+    _drawBirdFoot(bc, 36 + k * birdStep, 44);
+  }
+}
+
 // ── 起動 ─────────────────────────────────────────────────────────
 // スプラッシュのボタンタップ（ユーザージェスチャー）後に AR を開始する
 // モバイルブラウザはユーザー操作なしのカメラ起動を拒否するため
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('splash-sub').textContent = 'AR MAP · No.' + BUILD_NUM;
+  _initSplashFootprints();
 
   document.getElementById('splash-btn').addEventListener('click', async () => {
     document.getElementById('splash').classList.add('hidden');

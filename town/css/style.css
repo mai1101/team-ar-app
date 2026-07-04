@@ -19,53 +19,68 @@
   opacity: 1;
 }
 
-/* ===== スプラッシュ画面 ===== */
+/* ===== スプラッシュ画面（ノートブック風） ===== */
 #splash {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: #1a1008;
+  background-color: #fffdf4;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 31px,
+    #ddd5c2 31px,
+    #ddd5c2 32px
+  );
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
 }
 #splash.hidden { display: none; }
 
+#splash-fp-top,
+#splash-fp-bottom {
+  display: block;
+  flex-shrink: 0;
+  width: 100%;
+  height: 64px;
+}
+
 #splash-inner {
+  flex: 1;
   text-align: center;
-  color: #f5ead0;
-  padding: 40px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-}
-
-#splash-app-name {
-  font-size: 14px;
-  letter-spacing: .18em;
-  opacity: .65;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 32px;
 }
 
 #splash-title {
   font-size: 52px;
   font-weight: 700;
+  color: #1a1a2e;
   letter-spacing: .12em;
   line-height: 1;
+  text-shadow: 3px 3px 0 rgba(200,168,130,.6);
 }
 
 #splash-sub {
   font-size: 13px;
-  letter-spacing: .25em;
-  border: 1px solid rgba(245,234,208,.4);
-  padding: 4px 14px;
+  font-weight: 700;
+  letter-spacing: .22em;
+  color: #1a1a2e;
+  background: #ffd93d;
+  padding: 5px 16px;
   border-radius: 20px;
-  margin-bottom: 12px;
+  border: none;
+  margin-bottom: 6px;
 }
 
 #splash-btn {
-  background: #f5ead0;
-  color: #3d2b1f;
+  background: #3d2b1f;
+  color: #f5ead0;
   border: none;
   font-family: inherit;
   font-size: 17px;
@@ -74,14 +89,17 @@
   border-radius: 16px;
   cursor: pointer;
   letter-spacing: .04em;
-  transition: transform .15s, opacity .15s;
-  margin-top: 8px;
+  box-shadow: 0 5px 0 #c8a882;
+  transition: transform .12s, box-shadow .12s;
 }
-#splash-btn:active { transform: scale(.96); opacity: .85; }
+#splash-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #c8a882;
+}
 
 #splash-hint {
   font-size: 13px;
-  opacity: .5;
+  color: #a09080;
   line-height: 1.8;
   margin-top: 4px;
 }
