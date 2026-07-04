@@ -17,6 +17,9 @@
     <div id="message-ui">
         <h3 style="margin-top:0;">星のメッセージ</h3>
         <p id="msg-text"></p>
+
+        <img id="msg-photo" src="" style="display: none; max-width: 100%; border-radius: 8px; margin-bottom: 15px;">
+
         <div>
             <button id="like-btn">❤️ <span id="like-count">0</span></button>
             <button id="close-btn" class="action-btn">閉じる</button>
@@ -27,6 +30,9 @@
     <div id="post-ui">
         <h3 style="color: white; margin-bottom: 20px;">旅の思い出を残す</h3>
         <textarea id="new-msg-input" placeholder="ここに思い出を書いてください..."></textarea>
+
+        <input type="file" id="photo-input" accept="image/*" style="margin-bottom: 15px; color: white; width: 100%;">
+
         <div class="btn-group">
             <button id="cancel-btn">やめる</button>
             <button id="submit-btn">星にする</button>
