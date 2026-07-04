@@ -154,6 +154,7 @@ function _arMakeMesh(texture, pos) {
 
 // ── チェキメッシュの削除 ─────────────────────────────────────────
 function removeChekiMesh(cardId) {
+  hideGhostLine(cardId);
   var mesh = _arMeshMap.get(cardId);
   if (!mesh) return;
   _arAnchor.group.remove(mesh);
@@ -166,6 +167,57 @@ function removeChekiMesh(cardId) {
 // ── 全メッシュの表示 / 非表示 ────────────────────────────────────
 function setMeshesVisible(visible) {
   _arMeshMap.forEach(function(m) { m.visible = visible; });
+  _arGhostLineMap.forEach(function(line) { line.visible = visible; });
+}
+
+// ── 元位置↔現在位置をつなぐ点線 ───────────────────────────────────
+var _arGhostLineMap = new Map(); // card.id → THREE.Line
+
+function showGhostLine(cardId, fromPos, toPos) {
+  if (_arGhostLineMap.has(cardId)) {
+    // 既存ラインがあれば終点だけ更新
+    updateGhostLine(cardId, toPos);
+    return;
+  }
+  var points = [
+    new THREE.Vector3(fromPos.x, fromPos.y, fromPos.z),
+    new THREE.Vector3(toPos.x,   toPos.y,   toPos.z),
+  ];
+  var geo = new THREE.BufferGeometry().setFromPoints(points);
+  var mat = new THREE.LineDashedMaterial({
+    color:       0x3d2b1f,
+    dashSize:    0.012,
+    gapSize:     0.008,
+    opacity:     0.55,
+    transparent: true,
+  });
+  var line = new THREE.Line(geo, mat);
+  line.computeLineDistances();
+  line.renderOrder = 997;
+  _arAnchor.group.add(line);
+  _arGhostLineMap.set(cardId, line);
+}
+
+function updateGhostLine(cardId, toPos) {
+  var line = _arGhostLineMap.get(cardId);
+  if (!line) return;
+  var arr = line.geometry.attributes.position.array;
+  arr[3] = toPos.x; arr[4] = toPos.y; arr[5] = toPos.z;
+  line.geometry.attributes.position.needsUpdate = true;
+  line.computeLineDistances();
+}
+
+function hideGhostLine(cardId) {
+  var line = _arGhostLineMap.get(cardId);
+  if (!line) return;
+  _arAnchor.group.remove(line);
+  line.geometry.dispose();
+  line.material.dispose();
+  _arGhostLineMap.delete(cardId);
+}
+
+function hideAllGhostLines() {
+  Array.from(_arGhostLineMap.keys()).forEach(function(id) { hideGhostLine(id); });
 }
 
 // ── 配置ピン（AR空間）────────────────────────────────────────────
