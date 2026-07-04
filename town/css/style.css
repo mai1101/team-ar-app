@@ -91,6 +91,8 @@ body {
 
 #ar-container canvas,
 #ar-container video {
+  position: absolute;
+  inset: 0;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover;
@@ -203,6 +205,7 @@ body {
   padding: 14px 16px;
   padding-bottom: max(16px, env(safe-area-inset-bottom));
   background: linear-gradient(to top, rgba(26,16,8,.72) 0%, transparent 100%);
+  margin-top: auto;
 }
 #footer button {
   flex: 1;
@@ -232,6 +235,11 @@ body {
 
 /* ===== ユーティリティ ===== */
 .hidden { display: none !important; }
+
+/* 配置モード中はフッターを非表示にして cancel ボタンと重ならないようにする */
+body:has(#placement-overlay:not(.hidden)) #footer {
+  display: none;
+}
 
 /* ===== チェキ詳細モーダル ===== */
 #cheki-modal {
@@ -527,20 +535,6 @@ input[type="file"] { display: none; }
   text-shadow: 0 1px 4px rgba(0,0,0,.5);
 }
 
-/* 十字線のヒント */
-#placement-overlay::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  border: 2px solid rgba(245,234,208,.6);
-  border-radius: 50%;
-  pointer-events: none;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.3);
-}
 
 #placement-bottom {
   padding: 20px;

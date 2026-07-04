@@ -16,23 +16,25 @@
 // ─────────────────────────────────────────────────────────────────
 
 // interaction.js と変数名が衝突しないよう _ar プレフィックスを使用
-var _arMindar   = null;
-var _arAnchor   = null;
-var _arRenderer = null;
-var _arScene    = null;
-var _arCamera   = null;
-var _arRunning  = false;
-var _arMeshMap  = new Map(); // card.id → THREE.Mesh
+var _arMindar    = null;
+var _arAnchor    = null;
+var _arRenderer  = null;
+var _arScene     = null;
+var _arCamera    = null;
+var _arRunning   = false;
+var _arMeshMap   = new Map(); // card.id → THREE.Mesh
+var _arContainer = null;      // コンテナ参照（startAR でリサイズに使用）
 
 // ── 初期化 ───────────────────────────────────────────────────────
 async function initAR(containerEl, targetSrc, onFound, onLost) {
+  _arContainer = containerEl;
   _arMindar = new window.MINDAR.IMAGE.MindARThree({
     container:       containerEl,
     imageTargetSrc:  targetSrc,
     maxTrack:        1,
     filterMinCF:     0.001,
     filterBeta:      1000,
-    missTolerance:   8,
+    missTolerance:   25,
   });
 
   _arRenderer = _arMindar.renderer;
@@ -49,6 +51,13 @@ async function startAR() {
   if (_arRunning) return;
   await _arMindar.start();
   _arRunning = true;
+
+  // MindAR は start() 後にレンダラーサイズを内部で固定するため、
+  // コンテナの実サイズで上書きして黒帯を防ぐ
+  var w = _arContainer.clientWidth  || window.innerWidth;
+  var h = _arContainer.clientHeight || window.innerHeight;
+  _arRenderer.setSize(w, h);
+
   _arRenderer.setAnimationLoop(function() { _arRenderer.render(_arScene, _arCamera); });
 }
 
