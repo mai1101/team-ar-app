@@ -38,7 +38,6 @@ let audioBlob = null;
 let isRecording = false;
 let recordingTimer = null; // ★追加：10秒制限用のタイマーを記憶する変数
 
-initBackgroundStars(100);
 
 // --- 録音ボタンのイベント設定 ---
 if (recordBtn) {
@@ -198,6 +197,8 @@ function initBackgroundStars(count = 150) {
         sceneEl.appendChild(starEl);
     }
 }
+
+initBackgroundStars(100);
 
 // --- 自力で距離を計算して星座（線）を描画する関数 ---
 function drawConstellations(starsList) {
