@@ -73,7 +73,8 @@ async function saveUserCard(card) {
   try {
     const data = { ...card, cottageId: _cottageId };
     if (card.photoDataUrl) {
-      data.photoDataUrl = await _resizePhoto(card.photoDataUrl, 200, 168);
+      data.photoBytes = await photoToFirestoreBytes(card.photoDataUrl);
+      delete data.photoDataUrl;   
     }
     await db.collection('spots').doc(card.id).set(data);
   } catch (err) {
