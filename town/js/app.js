@@ -53,12 +53,13 @@ async function main() {
   }
 
   // ── プリセット + ユーザーカードを読み込んでメッシュ生成 ────────
-  const userCards = await loadUserCardsFromFirestore();
-  const allCards  = [...PRESET_CARDS, ...userCards];
-  const positions = computeCardPositions(allCards);
+  const userCards      = await loadUserCardsFromFirestore();
+  const seasonPresets  = PRESET_CARDS.filter(c => isInSeasonalWindow(c.createdAt));
+  const allCards       = [...seasonPresets, ...userCards];
+  const positions      = computeCardPositions(allCards);
 
   // プリセットは同期追加（キャンバスが確定しているため）
-  for (const card of PRESET_CARDS) {
+  for (const card of seasonPresets) {
     const pos = positions[card.id];
     if (pos) addChekiMesh(card, pos);
   }

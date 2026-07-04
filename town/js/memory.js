@@ -80,12 +80,14 @@ async function loadUserCardsFromFirestore() {
     }
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-    return cards;
+    return cards.filter(function(c) { return isInSeasonalWindow(c.createdAt); });
   } catch (err) {
     console.error('[Firestore] 読み込みエラー:', err);
     // Firestore が使えないときは localStorage にフォールバック
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch { return []; }
+    try {
+      var cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      return cached.filter(function(c) { return isInSeasonalWindow(c.createdAt); });
+    } catch { return []; }
   }
 }
 
