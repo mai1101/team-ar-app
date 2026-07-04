@@ -57,12 +57,19 @@ body {
   content: '';
   position: absolute;
   left: 2.6rem;
+  right: auto;
   top: 0;
   bottom: 0;
   width: 1.5px;
   background: var(--margin-color);
   z-index: 1;
   pointer-events: none;
+  transition: left 0.28s ease, right 0.28s ease;
+}
+
+.screen.margin-right::before {
+  left: auto;
+  right: 2.6rem;
 }
 
 .drawing-bg {
@@ -70,6 +77,79 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 0;
+  perspective: 600px;
+}
+
+.page-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: center center;
+  backface-visibility: hidden;
+}
+
+@keyframes flipOutNext {
+  from { transform: rotateY(0deg);   opacity: 1;   }
+  to   { transform: rotateY(-90deg); opacity: 0.1; }
+}
+@keyframes flipInNext {
+  from { transform: rotateY(90deg);  opacity: 0.1; }
+  to   { transform: rotateY(0deg);   opacity: 1;   }
+}
+@keyframes flipOutPrev {
+  from { transform: rotateY(0deg);  opacity: 1;   }
+  to   { transform: rotateY(90deg); opacity: 0.1; }
+}
+@keyframes flipInPrev {
+  from { transform: rotateY(-90deg); opacity: 0.1; }
+  to   { transform: rotateY(0deg);   opacity: 1;   }
+}
+
+.flip-out-next { animation: flipOutNext 0.28s ease-in  forwards; }
+.flip-in-next  { animation: flipInNext  0.28s ease-out 0.28s backwards; }
+.flip-out-prev { animation: flipOutPrev 0.28s ease-in  forwards; }
+.flip-in-prev  { animation: flipInPrev  0.28s ease-out 0.28s backwards; }
+
+/* ページナビ */
+.page-nav {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+  background: rgba(253,251,245,0.88);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.3rem 0.9rem;
+  font-family: var(--font);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+  backdrop-filter: blur(4px);
+}
+
+.page-nav.hidden { display: none; }
+
+.page-nav__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--primary);
+  padding: 0.15rem 0.4rem;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+}
+
+.page-nav__btn:disabled { opacity: 0.25; cursor: default; }
+
+.page-nav__label {
+  font-size: 0.82rem;
+  color: var(--text-sub);
+  min-width: 3.2rem;
+  text-align: center;
+  letter-spacing: 0.05em;
 }
 
 .drawing-bg-item {

@@ -44,6 +44,9 @@ const cottageId = params.get("cottage") || "07";
 const VISIT_ID_KEY = "cottage_canvas_visit_id";
 const GUEST_ID_KEY = "cottage_canvas_guest_id";
 
+const PAGE_SIZE = 21;
+const _bgState  = {}; // { bgId: { pages, currentPage, screenId } }
+
 // ---- guestId の生成・取得 ----
 function getOrCreateGuestId() {
   let guestId = localStorage.getItem(GUEST_ID_KEY);
@@ -117,6 +120,12 @@ async function loadMyMessages() {
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach((el) => (el.hidden = true));
   document.getElementById(id).hidden = false;
+  // アクティブな画面のナビだけ表示
+  Object.keys(_bgState).forEach((bgId) => {
+    const nav = document.getElementById("page-nav-" + bgId);
+    if (!nav) return;
+    nav.classList.toggle("hidden", _bgState[bgId].screenId !== id);
+  });
 }
 
 // ---- 日付フォーマット ----
@@ -222,7 +231,6 @@ document.getElementById("back-from-history-btn").addEventListener("click", () =>
 document.getElementById("go-checkout-btn").addEventListener("click", () => {
   _clearCanvas();
   showScreen("screen-checkout");
-  loadDrawings();
 });
 
 document.getElementById("restart-btn").addEventListener("click", () => {
@@ -321,16 +329,27 @@ async function saveDrawing() {
     });
     await _doCheckout();
 
-    // 描いた絵を完了画面の中央に表示
-    const doneBg = document.getElementById("drawing-bg-done");
+    // 描いた絵を完了画面の1ページ目の先頭に追加
+    const doneBgId = "drawing-bg-done";
+    const doneBg   = document.getElementById(doneBgId);
     if (doneBg) {
-      const featured = document.createElement("img");
-      featured.src = imageData;
-      featured.className = "drawing-bg-item";
-      featured.style.left      = Math.random() * 80 + "%";
-      featured.style.top       = Math.random() * 80 + "%";
-      featured.style.transform = `rotate(${(Math.random() - 0.5) * 50}deg)`;
-      doneBg.appendChild(featured);
+      if (_bgState[doneBgId]) {
+        _bgState[doneBgId].pages[0].unshift(imageData);
+        _bgState[doneBgId].currentPage = 0;
+        const old = doneBg.querySelector(".page-layer");
+        if (old) old.remove();
+        const layer = document.createElement("div");
+        layer.className = "page-layer";
+        _placeInGrid(layer, _bgState[doneBgId].pages[0].slice(0, PAGE_SIZE));
+        doneBg.appendChild(layer);
+        _updatePageNav(doneBgId);
+      } else {
+        _bgState[doneBgId] = { pages: [[imageData]], currentPage: 0, screenId: "screen-done" };
+        const layer = document.createElement("div");
+        layer.className = "page-layer";
+        _placeInGrid(layer, [imageData]);
+        doneBg.appendChild(layer);
+      }
     }
 
     showScreen("screen-done");
@@ -342,49 +361,9 @@ async function saveDrawing() {
   }
 }
 
-// ---- 絵のギャラリー読み込み ----
-async function loadDrawings() {
-  const gallery = document.getElementById("drawing-gallery");
-  gallery.innerHTML = '<p class="loading-text">読み込み中...</p>';
-
-  try {
-    const q = query(
-      collection(db, "drawings"),
-      where("cottageId", "==", cottageId),
-      orderBy("createdAt", "desc"),
-      limit(10)
-    );
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      gallery.innerHTML = '<p class="empty-text">まだ絵がありません。最初に描いてみましょう！</p>';
-      return;
-    }
-
-    gallery.innerHTML = '<div class="drawing-gallery-grid"></div>';
-    const grid = gallery.querySelector(".drawing-gallery-grid");
-    snapshot.forEach((docSnap) => {
-      const d     = docSnap.data();
-      const div   = document.createElement("div");
-      div.className = "drawing-thumb";
-      const img   = document.createElement("img");
-      img.src     = d.imageData;
-      img.alt     = escapeHtml(d.authorName || "旅人") + "の絵";
-      const label = document.createElement("div");
-      label.className = "drawing-thumb__label";
-      label.textContent = d.authorName || "旅人";
-      div.appendChild(img);
-      div.appendChild(label);
-      grid.appendChild(div);
-    });
-  } catch (err) {
-    console.error("絵の読み込みエラー:", err);
-    gallery.innerHTML = '<p class="error-text">読み込みに失敗しました。</p>';
-  }
-}
 
 // ---- グリッドで重ならないよう配置 ----
-function _placeInGrid(bg, images) {
+function _placeInGrid(container, images) {
   const CELL_W = 155;
   const CELL_H = 108;
   const COLS   = 3;
@@ -404,28 +383,111 @@ function _placeInGrid(bg, images) {
     img.style.left      = (c * CELL_W + Math.random() * 18) + "px";
     img.style.top       = (r * CELL_H + Math.random() * 18) + "px";
     img.style.transform = `rotate(${(Math.random() - 0.5) * 40}deg)`;
-    bg.appendChild(img);
+    container.appendChild(img);
   });
 }
 
-// ---- 背景に絵を散りばめる ----
+// ---- ページナビ作成 ----
+function _createPageNav(bgId, screenId, total) {
+  const old = document.getElementById("page-nav-" + bgId);
+  if (old) old.remove();
+  if (total <= 1) return;
+
+  const screen = document.getElementById(screenId);
+  const nav = document.createElement("div");
+  nav.className = (screen && !screen.hidden) ? "page-nav" : "page-nav hidden";
+  nav.id = "page-nav-" + bgId;
+  nav.innerHTML = `
+    <button class="page-nav__btn" id="page-prev-${bgId}" disabled>◀</button>
+    <span class="page-nav__label" id="page-label-${bgId}">1 / ${total}</span>
+    <button class="page-nav__btn" id="page-next-${bgId}">▶</button>`;
+  document.body.appendChild(nav);
+
+  document.getElementById("page-prev-" + bgId).addEventListener("click", () => _flipPage(bgId, -1));
+  document.getElementById("page-next-" + bgId).addEventListener("click", () => _flipPage(bgId, +1));
+}
+
+// ---- ナビ表示更新 ----
+function _updatePageNav(bgId) {
+  const state = _bgState[bgId];
+  if (!state) return;
+  const label   = document.getElementById("page-label-"  + bgId);
+  const prevBtn = document.getElementById("page-prev-"   + bgId);
+  const nextBtn = document.getElementById("page-next-"   + bgId);
+  if (!label) return;
+  label.textContent  = `${state.currentPage + 1} / ${state.pages.length}`;
+  prevBtn.disabled   = state.currentPage === 0;
+  nextBtn.disabled   = state.currentPage === state.pages.length - 1;
+}
+
+// ---- ページめくり ----
+function _flipPage(bgId, direction) {
+  const state = _bgState[bgId];
+  if (!state) return;
+  const next = state.currentPage + direction;
+  if (next < 0 || next >= state.pages.length) return;
+
+  const bg = document.getElementById(bgId);
+  if (!bg) return;
+
+  const oldLayer = bg.querySelector(".page-layer");
+  const newLayer = document.createElement("div");
+  newLayer.className = "page-layer";
+  _placeInGrid(newLayer, state.pages[next]);
+  bg.appendChild(newLayer);
+
+  if (oldLayer) {
+    oldLayer.classList.add(direction > 0 ? "flip-out-next" : "flip-out-prev");
+    setTimeout(() => oldLayer.remove(), 300);
+  }
+  newLayer.classList.add(direction > 0 ? "flip-in-next" : "flip-in-prev");
+
+  state.currentPage = next;
+  _updatePageNav(bgId);
+
+  // 赤線を左右交互に切り替え（偶数ページ=左、奇数ページ=右）
+  const screen = document.getElementById(state.screenId);
+  if (screen) screen.classList.toggle("margin-right", next % 2 === 1);
+}
+
+// ---- 背景にページめくりで絵を表示 ----
 async function loadDrawingsBg() {
   try {
     const q = query(
       collection(db, "drawings"),
       where("cottageId", "==", cottageId),
       orderBy("createdAt", "desc"),
-      limit(20)
+      limit(100)
     );
     const snapshot = await getDocs(q);
     if (snapshot.empty) return;
 
     const images = snapshot.docs.map((d) => d.data().imageData).filter(Boolean);
 
-    ["drawing-bg-checkin", "drawing-bg-checkout", "drawing-bg-done"].forEach((bgId) => {
+    // PAGE_SIZE ごとにページ分割
+    const pages = [];
+    for (let i = 0; i < images.length; i += PAGE_SIZE) {
+      pages.push(images.slice(i, i + PAGE_SIZE));
+    }
+
+    const targets = [
+      { bgId: "drawing-bg-checkin",  screenId: "screen-checkin"  },
+      { bgId: "drawing-bg-checkout", screenId: "screen-checkout" },
+      { bgId: "drawing-bg-done",     screenId: "screen-done"     },
+    ];
+
+    targets.forEach(({ bgId, screenId }) => {
       const bg = document.getElementById(bgId);
       if (!bg) return;
-      _placeInGrid(bg, images);
+
+      _bgState[bgId] = { pages, currentPage: 0, screenId };
+
+      const layer = document.createElement("div");
+      layer.className = "page-layer";
+      _placeInGrid(layer, pages[0]);
+      bg.appendChild(layer);
+
+      _createPageNav(bgId, screenId, pages.length);
     });
   } catch (err) {
     console.error("背景絵の読み込みエラー:", err);
