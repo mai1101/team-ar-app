@@ -516,6 +516,7 @@ input[type="file"] { display: none; }
   inset: 0;
   z-index: 50;
   pointer-events: auto;
+  cursor: pointer; /* iOS Safari の hit-test が透明要素を無視しないよう強制 */
   display: flex;
   flex-direction: column;
   justify-content: space-between;

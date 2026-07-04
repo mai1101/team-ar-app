@@ -148,12 +148,15 @@ async function main() {
   });
 
   // 配置モード中のタップ → ピンを表示
-  document.getElementById('placement-overlay').addEventListener('click', e => {
+  // click は iOS 透明要素で発火しない場合があるため pointerdown を使う
+  document.getElementById('placement-overlay').addEventListener('pointerdown', e => {
     if (!isPlacementMode()) return;
-    if (e.target.id === 'placement-cancel-btn') return;
-    if (e.target.id === 'placement-confirm-btn') return;
+    if (e.target.closest('button')) return; // ボタン類はそちらに任せる
+
     if (!_targetFound) {
-      alert('地図を認識できていません。地図にカメラをかざしてください。');
+      const guide = document.getElementById('placement-guide-text');
+      guide.textContent = '⚠️ 地図にカメラをかざしてください';
+      setTimeout(() => { guide.textContent = '地図をタップして場所を選んでください'; }, 2000);
       return;
     }
 
