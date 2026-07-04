@@ -38,6 +38,8 @@ let audioBlob = null;
 let isRecording = false;
 let recordingTimer = null; // ★追加：10秒制限用のタイマーを記憶する変数
 
+initBackgroundStars(100);
+
 // --- 録音ボタンのイベント設定 ---
 if (recordBtn) {
     recordBtn.addEventListener('click', async () => {
@@ -148,7 +150,7 @@ function renderStar(id, data) {
         newStar.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear');
     } else {
         // 音声付きの星は、通常の星（白）と区別して淡いピンク色（#FFB6C1）にする演出
-        newStar.setAttribute('color', data.audioDataUrl ? '#FFB6C1' : '#FFFFFF');
+        newStar.setAttribute('color', data.audioDataUrl ? '#FFB6C1' : '#b7fffe');
         newStar.setAttribute('material', 'shader: flat;');
     }
 
@@ -160,6 +162,40 @@ function renderStar(id, data) {
 
     if (currentStarId === id) {
         likeCountText.innerText = data.likes;
+    }
+}
+
+// --- 背景用の反応しない細かい星を自動生成する関数 ---
+function initBackgroundStars(count = 150) {
+    const sceneEl = document.querySelector('a-scene');
+    if (!sceneEl) return;
+
+    for (let i = 0; i < count; i++) {
+        const starEl = document.createElement('a-sphere');
+
+        // メッセージの星（奥6〜10m）よりも、さらに遠い背景（奥10〜30m）に広く散りばめる
+        const x = (Math.random() - 0.5) * 40; // 左右に広く (-20 〜 +20)
+        const y = 4 + Math.random() * 12;     // 空高く (4 〜 16)
+        const z = -10 - Math.random() * 20;   // はるか奥へ (-10 〜 -30)
+
+        starEl.setAttribute('position', `${x} ${y} ${z}`);
+
+        // 背景用の細かい星なので、サイズは極小（直径2cm〜5cm程度）にランダム設定
+        const radius = 0.01 + Math.random() * 0.015;
+        starEl.setAttribute('radius', radius.toString());
+
+        // 色は白。発光して見えるように shader: flat にし、アニメーション用に透明度を有効化
+        starEl.setAttribute('color', '#FFFFFF');
+        starEl.setAttribute('material', 'shader: flat; transparent: true; opacity: 1.0;');
+
+        // 🌟 星がチカチカと個別に瞬くように、ランダムな時間とズレ（delay）を入れたアニメーション
+        const randomDur = 1000 + Math.random() * 2000;  // 1〜3秒で1往復
+        const randomDelay = Math.random() * 2000;       // 輝き始めるタイミングをバラバラにする
+        starEl.setAttribute('animation', `property: material.opacity; from: 0.2; to: 1.0; dir: alternate; dur: ${randomDur}; delay: ${randomDelay}; loop: true; easing: easeInOutSine`);
+
+        // ★重要: class="clickable" を「あえてつけない」ことで、タップに一切反応しなくなります
+
+        sceneEl.appendChild(starEl);
     }
 }
 
