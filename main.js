@@ -137,44 +137,6 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
-// ---- メッセージ読み込み ----
-async function loadMessages() {
-  const list = document.getElementById("message-list");
-  list.innerHTML = '<p class="loading-text">読み込み中...</p>';
-
-  try {
-    const q = query(
-      collection(db, "messages"),
-      where("cottageId", "==", cottageId),
-      orderBy("createdAt", "desc"),
-      limit(5)
-    );
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      list.innerHTML =
-        '<p class="empty-text">あなたがこのコテージへの最初の宿泊者です。素敵な旅を！</p>';
-      return;
-    }
-
-    list.innerHTML = "";
-    snapshot.forEach((docSnap) => {
-      const d = docSnap.data();
-      const dateStr = d.createdAt?.toDate ? formatDate(d.createdAt.toDate()) : "";
-      list.innerHTML += `
-        <div class="message-card">
-          <div class="message-card__header">
-            <span class="message-card__author">${escapeHtml(d.authorName || "旅人")}</span>
-            ${dateStr ? `<span class="message-card__date">${dateStr}</span>` : ""}
-          </div>
-          <p class="message-card__text">${escapeHtml(d.text)}</p>
-        </div>`;
-    });
-  } catch (err) {
-    console.error("メッセージ取得エラー:", err);
-    list.innerHTML = '<p class="error-text">メッセージの取得に失敗しました。</p>';
-  }
-}
 
 // ---- チェックイン ----
 async function handleCheckin() {
@@ -243,7 +205,6 @@ async function restoreCheckinState() {
 
 restoreCheckinState();
 
-loadMessages();
 loadVisitCount();
 loadDrawingsBg();
 
@@ -270,7 +231,6 @@ document.getElementById("restart-btn").addEventListener("click", () => {
   document.getElementById("checkin-form").hidden = false;
   document.getElementById("after-checkin").hidden = true;
   showScreen("screen-checkin");
-  loadMessages();
 });
 
 // ---- 描画キャンバス ----
@@ -285,7 +245,7 @@ let _isDrawing    = false;
 let _currentColor = "#222222";
 
 function _clearCanvas() {
-  _ctx.fillStyle = "#ffffff";
+  _ctx.fillStyle = "#f7f4ec";
   _ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 }
 _clearCanvas();
@@ -360,6 +320,19 @@ async function saveDrawing() {
       createdAt: serverTimestamp(),
     });
     await _doCheckout();
+
+    // 描いた絵を完了画面の中央に表示
+    const doneBg = document.getElementById("drawing-bg-done");
+    if (doneBg) {
+      const featured = document.createElement("img");
+      featured.src = imageData;
+      featured.className = "drawing-bg-item";
+      featured.style.left      = Math.random() * 80 + "%";
+      featured.style.top       = Math.random() * 80 + "%";
+      featured.style.transform = `rotate(${(Math.random() - 0.5) * 50}deg)`;
+      doneBg.appendChild(featured);
+    }
+
     showScreen("screen-done");
   } catch (err) {
     console.error("絵の投稿エラー:", err);
@@ -410,6 +383,31 @@ async function loadDrawings() {
   }
 }
 
+// ---- グリッドで重ならないよう配置 ----
+function _placeInGrid(bg, images) {
+  const CELL_W = 155;
+  const CELL_H = 108;
+  const COLS   = 3;
+  const rows   = Math.ceil(images.length / COLS) + 1;
+
+  const cells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < COLS; c++) cells.push([c, r]);
+  }
+  cells.sort(() => Math.random() - 0.5);
+
+  images.forEach((src, i) => {
+    const [c, r] = cells[i] ?? [Math.floor(Math.random() * COLS), 0];
+    const img = document.createElement("img");
+    img.src = src;
+    img.className = "drawing-bg-item";
+    img.style.left      = (c * CELL_W + Math.random() * 18) + "px";
+    img.style.top       = (r * CELL_H + Math.random() * 18) + "px";
+    img.style.transform = `rotate(${(Math.random() - 0.5) * 40}deg)`;
+    bg.appendChild(img);
+  });
+}
+
 // ---- 背景に絵を散りばめる ----
 async function loadDrawingsBg() {
   try {
@@ -424,18 +422,10 @@ async function loadDrawingsBg() {
 
     const images = snapshot.docs.map((d) => d.data().imageData).filter(Boolean);
 
-    ["drawing-bg-checkin", "drawing-bg-checkout"].forEach((bgId) => {
+    ["drawing-bg-checkin", "drawing-bg-checkout", "drawing-bg-done"].forEach((bgId) => {
       const bg = document.getElementById(bgId);
       if (!bg) return;
-      images.forEach((imageData) => {
-        const img = document.createElement("img");
-        img.src = imageData;
-        img.className = "drawing-bg-item";
-        img.style.left      = Math.random() * 80 + "%";
-        img.style.top       = Math.random() * 80 + "%";
-        img.style.transform = `rotate(${(Math.random() - 0.5) * 50}deg)`;
-        bg.appendChild(img);
-      });
+      _placeInGrid(bg, images);
     });
   } catch (err) {
     console.error("背景絵の読み込みエラー:", err);

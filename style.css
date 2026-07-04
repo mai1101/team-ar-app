@@ -49,6 +49,7 @@ body {
   padding-bottom: 3rem;
   position: relative;
   overflow: hidden;
+  min-height: 100dvh;
 }
 
 /* 赤い余白線 */
@@ -339,6 +340,8 @@ body {
   padding: 2rem;
   text-align: center;
   gap: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 .completion__icon {
@@ -409,7 +412,7 @@ body {
   aspect-ratio: 8 / 5;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
-  background: #fff;
+  background: #f7f4ec;
   cursor: crosshair;
   touch-action: none;
   margin-bottom: 0.75rem;
