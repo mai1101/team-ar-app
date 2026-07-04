@@ -3,27 +3,89 @@
 // =====================================================================
 
 const STORAGE_KEY = 'ashiato_user_cards_v1';
+const _cottageId  = new URLSearchParams(window.location.search).get('cottage') || '07';
 
-// ── localStorage CRUD ──────────────────────────────────────────────
+// ── 写真をリサイズして Firestore に入る大きさにする ─────────────────
+function _resizePhoto(dataUrl, maxW, maxH) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio  = Math.min(maxW / img.width, maxH / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+// ── 写真を Firestore の Bytes型 に変換する ──────────────────────────
+async function photoToFirestoreBytes(dataUrl) {
+  const resized  = await _resizePhoto(dataUrl, 200, 168);
+  const response = await fetch(resized);
+  const arrayBuf = await response.arrayBuffer();
+  const uint8    = new Uint8Array(arrayBuf);
+  return firebase.firestore.Blob.fromUint8Array(uint8);
+}
+
+// ── Firestore からチェキ一覧を取得（起動時に呼ぶ） ──────────────────
+async function loadUserCardsFromFirestore() {
+  try {
+    const snapshot = await db.collection('spots')
+      .where('cottageId', '==', _cottageId)
+      .orderBy('createdAt', 'asc')
+      .get();
+    const cards = snapshot.docs.map(doc => {
+      const d = doc.data();
+      if (d.photoBytes) {
+        d.photoDataUrl = 'data:image/jpeg;base64,' + d.photoBytes.toBase64();
+        delete d.photoBytes;
+      }
+      return { ...d, id: doc.id };
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    return cards;
+  } catch (err) {
+    console.error('[Firestore] 読み込みエラー:', err);
+    // Firestore が使えないときは localStorage にフォールバック
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch { return []; }
+  }
+}
+
+// ── localStorage CRUD（ローカルキャッシュとして残す） ──────────────
 function getUserCards() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
   catch { return []; }
 }
 
-function saveUserCard(card) {
+async function saveUserCard(card) {
+  // localStorage に即時反映（表示をブロックしない）
   const cards = getUserCards();
-  const existing = cards.findIndex(c => c.id === card.id);
-  if (existing >= 0) {
-    cards[existing] = card;
-  } else {
-    cards.push(card);
-  }
+  const idx = cards.findIndex(c => c.id === card.id);
+  if (idx >= 0) cards[idx] = card; else cards.push(card);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+
+  // Firestore に保存（写真はリサイズして容量を抑える）
+  try {
+    const data = { ...card, cottageId: _cottageId };
+    if (card.photoDataUrl) {
+      data.photoDataUrl = await _resizePhoto(card.photoDataUrl, 200, 168);
+    }
+    await db.collection('spots').doc(card.id).set(data);
+  } catch (err) {
+    console.error('[Firestore] 保存エラー:', err);
+  }
 }
 
 function deleteUserCard(id) {
   const cards = getUserCards().filter(c => c.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+  db.collection('spots').doc(id).delete()
+    .catch(err => console.error('[Firestore] 削除エラー:', err));
 }
 
 function updateUserCardComment(id, newComment) {
@@ -32,6 +94,8 @@ function updateUserCardComment(id, newComment) {
   if (idx < 0) return null;
   cards[idx].comment = newComment;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+  db.collection('spots').doc(id).update({ comment: newComment })
+    .catch(err => console.error('[Firestore] 更新エラー:', err));
   return cards[idx];
 }
 
@@ -172,12 +236,12 @@ function isPlacementMode() { return _isPlacementMode; }
 function getPendingCard()   { return _pendingCard; }
 
 // app.js から呼ばれる：タップ位置が確定したときに実行
-function confirmPlacement(localPos) {
+async function confirmPlacement(localPos) {
   if (!_pendingCard) return;
 
   _pendingCard.position = { x: localPos.x, y: localPos.y, z: 0.015 };
   _pendingCard.spot     = '__manual__';
-  saveUserCard(_pendingCard);
+  await saveUserCard(_pendingCard);
 
   const card = { ..._pendingCard };
   exitPlacementMode();

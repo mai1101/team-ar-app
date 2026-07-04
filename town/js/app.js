@@ -36,7 +36,7 @@ async function main() {
   }
 
   // ── プリセット + ユーザーカードを読み込んでメッシュ生成 ────────
-  const userCards = getUserCards();
+  const userCards = await loadUserCardsFromFirestore();
   const allCards  = [...PRESET_CARDS, ...userCards];
   const positions = computeCardPositions(allCards);
 

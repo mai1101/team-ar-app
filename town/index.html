@@ -7,6 +7,11 @@
   <title>あしあと - AR MAP</title>
   <link rel="stylesheet" href="css/style.css">
 
+  <!-- Firebase compat CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-init.js"></script>
+
   <!-- Three.js（グローバル THREE として公開） -->
   <script src="vendor/three.min.js"></script>
   <!-- MindAR 1.1.5（ブラウザ対応 IIFE ビルド・Three.js は内部バンドル） -->
@@ -82,7 +87,7 @@
           <span id="photo-label-text">📷 写真を選ぶ</span>
           <img id="photo-preview" class="hidden" alt="選択した写真">
         </label>
-        <input type="file" id="photo-input" accept="image/*" capture="environment">
+        <input type="file" id="photo-input" accept="image/*">
       </div>
       <textarea id="comment-input"
         placeholder="一言メモを書いてください&#10;（例：夕暮れが最高でした🌅）"
