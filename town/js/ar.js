@@ -32,7 +32,7 @@ async function initAR(containerEl, targetSrc, onFound, onLost) {
     maxTrack:        1,
     filterMinCF:     0.001,
     filterBeta:      1000,
-    missTolerance:   8,
+    missTolerance:   25,
   });
 
   _arRenderer = _arMindar.renderer;
