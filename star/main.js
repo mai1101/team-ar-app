@@ -85,7 +85,7 @@ function renderStar(id, data) {
         likeCountText.innerText = data.likes;
     }
 }
-}
+
 
 // --- Firebaseのデータをリアルタイム監視（魔法の部分） ---
 onSnapshot(collection(db, "stars"), (snapshot) => {
