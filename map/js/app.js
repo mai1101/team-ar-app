@@ -111,7 +111,7 @@ async function main() {
   });
 
   document.getElementById('home-btn').addEventListener('click', () => {
-    // ホーム遷移（未実装 - デモでは何もしない）
+    window.location.href = '../';
   });
 
   document.getElementById('placement-cancel-btn').addEventListener('click', () => {
