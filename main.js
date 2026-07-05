@@ -389,6 +389,13 @@ async function saveDrawing() {
 
 
 // ---- グリッドで重ならないよう配置 ----
+const TAPE_COLORS = [
+  "rgba(230,210,160,0.6)",
+  "rgba(180,220,190,0.6)",
+  "rgba(180,210,235,0.6)",
+  "rgba(235,195,195,0.6)",
+];
+
 function _placeInGrid(container, images) {
   const CELL_W = 155;
   const CELL_H = 108;
@@ -403,13 +410,24 @@ function _placeInGrid(container, images) {
 
   images.forEach((src, i) => {
     const [c, r] = cells[i] ?? [Math.floor(Math.random() * COLS), 0];
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "drawing-bg-item";
+    wrapper.style.left      = (c * CELL_W + Math.random() * 18) + "px";
+    wrapper.style.top       = (r * CELL_H + Math.random() * 18) + "px";
+    wrapper.style.transform = `rotate(${(Math.random() - 0.5) * 40}deg)`;
+
+    const tape = document.createElement("div");
+    tape.className = "tape";
+    tape.style.background = TAPE_COLORS[i % TAPE_COLORS.length];
+    tape.style.transform  = `translateX(-50%) rotate(${(Math.random() - 0.5) * 8}deg)`;
+
     const img = document.createElement("img");
     img.src = src;
-    img.className = "drawing-bg-item";
-    img.style.left      = (c * CELL_W + Math.random() * 18) + "px";
-    img.style.top       = (r * CELL_H + Math.random() * 18) + "px";
-    img.style.transform = `rotate(${(Math.random() - 0.5) * 40}deg)`;
-    container.appendChild(img);
+
+    wrapper.appendChild(tape);
+    wrapper.appendChild(img);
+    container.appendChild(wrapper);
   });
 }
 
@@ -503,16 +521,38 @@ function _initSwipe(screenId, bgId) {
 // ---- 背景にページめくりで絵を表示 ----
 async function loadDrawingsBg() {
   try {
-    const q = query(
-      collection(db, "drawings"),
-      where("cottageId", "==", cottageId),
-      orderBy("createdAt", "desc"),
-      limit(100)
-    );
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return;
+    const [drawingsSnap, spotsSnap] = await Promise.all([
+      getDocs(query(
+        collection(db, "drawings"),
+        where("cottageId", "==", cottageId),
+        orderBy("createdAt", "desc"),
+        limit(80)
+      )),
+      getDocs(query(
+        collection(db, "spots"),
+        where("cottageId", "==", cottageId),
+        limit(30)
+      )),
+    ]);
 
-    const images = snapshot.docs.map((d) => d.data().imageData).filter(Boolean);
+    const drawingImages = drawingsSnap.docs.map(d => d.data().imageData).filter(Boolean);
+
+    const spotImages = [];
+    for (const d of spotsSnap.docs) {
+      const pb = d.data().photoBytes;
+      if (!pb) continue;
+      try {
+        const uint8 = pb.toUint8Array();
+        let binary = "";
+        uint8.forEach(b => (binary += String.fromCharCode(b)));
+        spotImages.push("data:image/jpeg;base64," + btoa(binary));
+      } catch (e) {
+        console.warn("spot photo変換エラー", e);
+      }
+    }
+
+    const images = [...drawingImages, ...spotImages].sort(() => Math.random() - 0.5);
+    if (images.length === 0) return;
 
     // PAGE_SIZE ごとにページ分割
     const pages = [];
