@@ -54,10 +54,7 @@ if (recordBtn) {
                 };
 
                 mediaRecorder.onstop = () => {
-                    // ★修正：iPhoneならmp4、PCならwebmなど、端末の標準形式を自動取得する
-                    const mimeType = mediaRecorder.mimeType || 'audio/mp4';
-                    audioBlob = new Blob(audioChunks, { type: mimeType });
-
+                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const audioUrl = URL.createObjectURL(audioBlob);
                     previewAudio.src = audioUrl;
                     previewAudio.style.display = 'block';
@@ -116,7 +113,7 @@ function renderStar(id, data) {
     const hitbox = document.createElement('a-entity');
     hitbox.setAttribute('id', id);
     hitbox.setAttribute('class', 'clickable');
-    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 0.8');
+    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 1.0');
     hitbox.setAttribute('material', 'opacity: 0; transparent: true; depthWrite: false;');
     hitbox.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
 
@@ -175,37 +172,39 @@ function initBackgroundStars(count = 150) {
     for (let i = 0; i < count; i++) {
         const starEl = document.createElement('a-sphere');
 
-        // メッセージの星よりも、さらに遠い背景に広く散りばめる
-        const x = (Math.random() - 0.5) * 40;
-        const y = 4 + Math.random() * 12;
-        const z = -10 - Math.random() * 20;
+        // メッセージの星（奥6〜10m）よりも、さらに遠い背景（奥10〜30m）に広く散りばめる
+        const x = (Math.random() - 0.5) * 40; // 左右に広く (-20 〜 +20)
+        const y = 4 + Math.random() * 12;     // 空高く (4 〜 16)
+        const z = -10 - Math.random() * 20;   // はるか奥へ (-10 〜 -30)
 
         starEl.setAttribute('position', `${x} ${y} ${z}`);
 
-        // 背景用の細かい星なので、サイズは極小に設定
+        // 背景用の細かい星なので、サイズは極小（直径2cm〜5cm程度）にランダム設定
         const radius = 0.01 + Math.random() * 0.015;
         starEl.setAttribute('radius', radius.toString());
 
-        // 色は常に白。発光して見えるように shader: flat にし、アニメーション用に透明度を有効化
+        // 色は白。発光して見えるように shader: flat にし、アニメーション用に透明度を有効化
         starEl.setAttribute('color', '#FFFFFF');
         starEl.setAttribute('material', 'shader: flat; transparent: true; opacity: 1.0;');
 
         // 🌟 星がチカチカと個別に瞬くように、ランダムな時間とズレ（delay）を入れたアニメーション
-        const randomDur = 1000 + Math.random() * 2000;
-        const randomDelay = Math.random() * 2000;
+        const randomDur = 1000 + Math.random() * 2000;  // 1〜3秒で1往復
+        const randomDelay = Math.random() * 2000;       // 輝き始めるタイミングをバラバラにする
         starEl.setAttribute('animation', `property: material.opacity; from: 0.2; to: 1.0; dir: alternate; dur: ${randomDur}; delay: ${randomDelay}; loop: true; easing: easeInOutSine`);
+
+        // ★重要: class="clickable" を「あえてつけない」ことで、タップに一切反応しなくなります
 
         sceneEl.appendChild(starEl);
     }
 }
 
-// 空間の準備ができたら背景の星を生成
 const sceneEl = document.querySelector('a-scene');
 if (sceneEl.hasLoaded) {
     initBackgroundStars(150);
 } else {
     sceneEl.addEventListener('loaded', () => initBackgroundStars(150));
 }
+
 // --- 自力で距離を計算して星座（線）を描画する関数 ---
 function drawConstellations(starsList) {
     const sceneEl = document.querySelector('a-scene');
@@ -272,10 +271,7 @@ onSnapshot(collection(db, "stars"), (snapshot) => {
         const data = doc.data();
         // 🔊 読み込み時：音声Bytes型をBase64（再生可能なURL）に復元
         if (data.audioBytes) {
-            // ★修正：保存された形式を取り出す（過去のデータのために一応webmを予備にする）
-            const mime = data.mimeType || 'audio/webm';
-            // 形式に合わせてURLを生成する
-            data.audioDataUrl = `data:${mime};base64,` + data.audioBytes.toBase64();
+            data.audioDataUrl = 'data:audio/webm;base64,' + data.audioBytes.toBase64();
             delete data.audioBytes;
         }
         starsList.push({ id: doc.id, ...data });
@@ -315,8 +311,6 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
     if (audioBlob) {
         const arrayBuffer = await audioBlob.arrayBuffer();
         data.audioBytes = Bytes.fromUint8Array(new Uint8Array(arrayBuffer));
-        // ★追加：後で正しく再生できるように、録音した形式（mp4かwebmか等）も一緒に保存！
-        data.mimeType = audioBlob.type;
     }
 
     // Firebaseに保存
