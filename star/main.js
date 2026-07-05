@@ -40,21 +40,33 @@ let recordingTimer = null; // ★追加：10秒制限用のタイマーを記憶
 
 
 // --- 録音ボタンのイベント設定 ---
+// iOSはaudio/webm非対応のためmp4を優先
+function _getSupportedMimeType() {
+    const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+    for (const t of types) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return '';
+}
+
 if (recordBtn) {
     recordBtn.addEventListener('click', async () => {
         if (!isRecording) {
-            // 録音開始
             audioChunks = [];
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
+                const mimeType = _getSupportedMimeType();
+                mediaRecorder = mimeType
+                    ? new MediaRecorder(stream, { mimeType })
+                    : new MediaRecorder(stream);
 
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) audioChunks.push(e.data);
                 };
 
                 mediaRecorder.onstop = () => {
-                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const actualType = mediaRecorder.mimeType || mimeType || 'audio/webm';
+                    audioBlob = new Blob(audioChunks, { type: actualType });
                     const audioUrl = URL.createObjectURL(audioBlob);
                     previewAudio.src = audioUrl;
                     previewAudio.style.display = 'block';
@@ -62,24 +74,22 @@ if (recordBtn) {
 
                 mediaRecorder.start();
                 isRecording = true;
-                recordBtn.innerText = "⏹ 録音を停止 (最大10秒)";
+                recordBtn.innerText = "⏹ 録音を停止 (最大5秒)";
                 recordBtn.style.background = "#333";
                 recordStatus.style.display = "inline";
 
-                // ★追加：10秒（10000ミリ秒）後に自動で停止するタイマーを始動
                 recordingTimer = setTimeout(() => {
                     if (isRecording) {
                         stopRecordingProcess();
-                        alert("間もなく10秒に達したため、録音を自動停止しました。");
+                        alert("5秒に達したため録音を自動停止しました。");
                     }
-                }, 10000);
+                }, 5000);
 
             } catch (err) {
                 alert("マイクの許可が必要です: " + err);
             }
         } else {
-            // 10秒経つ前に、手動で録音を停止した場合
-            if (recordingTimer) clearTimeout(recordingTimer); // ★タイマーを解除
+            if (recordingTimer) clearTimeout(recordingTimer);
             stopRecordingProcess();
         }
     });
@@ -271,7 +281,8 @@ onSnapshot(collection(db, "stars"), (snapshot) => {
         const data = doc.data();
         // 🔊 読み込み時：音声Bytes型をBase64（再生可能なURL）に復元
         if (data.audioBytes) {
-            data.audioDataUrl = 'data:audio/webm;base64,' + data.audioBytes.toBase64();
+            const mime = data.audioMimeType || 'audio/webm';
+            data.audioDataUrl = `data:${mime};base64,` + data.audioBytes.toBase64();
             delete data.audioBytes;
         }
         starsList.push({ id: doc.id, ...data });
@@ -310,7 +321,14 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
     // 🔊 保存時：録音データ（Blob）があればBytes型に変換して乗せる
     if (audioBlob) {
         const arrayBuffer = await audioBlob.arrayBuffer();
-        data.audioBytes = Bytes.fromUint8Array(new Uint8Array(arrayBuffer));
+        if (arrayBuffer.byteLength > 700000) {
+            alert('音声が大きすぎます。もう少し短く録音してください。');
+            submitBtn.disabled = false;
+            submitBtn.innerText = "星にする";
+            return;
+        }
+        data.audioBytes    = Bytes.fromUint8Array(new Uint8Array(arrayBuffer));
+        data.audioMimeType = (audioBlob.type || 'audio/webm').split(';')[0];
     }
 
     // Firebaseに保存
