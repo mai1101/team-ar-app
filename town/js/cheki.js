@@ -516,8 +516,8 @@ function createModalCanvas(card) {
 }
 
 // ── テクスチャ更新（編集後のメッシュ再描画用）────────────────────
-function refreshChekiTexture(mesh, card) {
-  const canvas = createChekiCanvas(card);
+async function refreshChekiTexture(mesh, card) {
+  const canvas = await createChekiCanvasAsync(card);
   const texture = new THREE.CanvasTexture(canvas);
   mesh.material.map.dispose();
   mesh.material.map = texture;
