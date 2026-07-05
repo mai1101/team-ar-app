@@ -516,10 +516,10 @@ function createModalCanvas(card) {
 }
 
 // ── テクスチャ更新（編集後のメッシュ再描画用）────────────────────
-function refreshChekiTexture(mesh, card) {
-  const canvas = createChekiCanvas(card);
-  const texture = new THREE.CanvasTexture(canvas);
-  mesh.material.map.dispose();
-  mesh.material.map = texture;
-  mesh.material.needsUpdate = true;
+async function refreshChekiTexture(mesh, card) {
+  const canvas = await createChekiCanvasAsync(card);
+  if (!mesh.material || !mesh.material.map) return;
+  // 既存テクスチャの canvas を差し替えて needsUpdate するのが Three.js の推奨
+  mesh.material.map.image = canvas;
+  mesh.material.map.needsUpdate = true;
 }

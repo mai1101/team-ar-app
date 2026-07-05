@@ -172,39 +172,37 @@ function initBackgroundStars(count = 150) {
     for (let i = 0; i < count; i++) {
         const starEl = document.createElement('a-sphere');
 
-        // メッセージの星（奥6〜10m）よりも、さらに遠い背景（奥10〜30m）に広く散りばめる
-        const x = (Math.random() - 0.5) * 40; // 左右に広く (-20 〜 +20)
-        const y = 4 + Math.random() * 12;     // 空高く (4 〜 16)
-        const z = -10 - Math.random() * 20;   // はるか奥へ (-10 〜 -30)
+        // メッセージの星よりも、さらに遠い背景に広く散りばめる
+        const x = (Math.random() - 0.5) * 40;
+        const y = 4 + Math.random() * 12;
+        const z = -10 - Math.random() * 20;
 
         starEl.setAttribute('position', `${x} ${y} ${z}`);
 
-        // 背景用の細かい星なので、サイズは極小（直径2cm〜5cm程度）にランダム設定
+        // 背景用の細かい星なので、サイズは極小に設定
         const radius = 0.01 + Math.random() * 0.015;
         starEl.setAttribute('radius', radius.toString());
 
-        // 色は白。発光して見えるように shader: flat にし、アニメーション用に透明度を有効化
+        // 色は常に白。発光して見えるように shader: flat にし、アニメーション用に透明度を有効化
         starEl.setAttribute('color', '#FFFFFF');
         starEl.setAttribute('material', 'shader: flat; transparent: true; opacity: 1.0;');
 
         // 🌟 星がチカチカと個別に瞬くように、ランダムな時間とズレ（delay）を入れたアニメーション
-        const randomDur = 1000 + Math.random() * 2000;  // 1〜3秒で1往復
-        const randomDelay = Math.random() * 2000;       // 輝き始めるタイミングをバラバラにする
+        const randomDur = 1000 + Math.random() * 2000;
+        const randomDelay = Math.random() * 2000;
         starEl.setAttribute('animation', `property: material.opacity; from: 0.2; to: 1.0; dir: alternate; dur: ${randomDur}; delay: ${randomDelay}; loop: true; easing: easeInOutSine`);
-
-        // ★重要: class="clickable" を「あえてつけない」ことで、タップに一切反応しなくなります
 
         sceneEl.appendChild(starEl);
     }
 }
 
+// 空間の準備ができたら背景の星を生成
 const sceneEl = document.querySelector('a-scene');
 if (sceneEl.hasLoaded) {
     initBackgroundStars(150);
 } else {
     sceneEl.addEventListener('loaded', () => initBackgroundStars(150));
 }
-
 // --- 自力で距離を計算して星座（線）を描画する関数 ---
 function drawConstellations(starsList) {
     const sceneEl = document.querySelector('a-scene');

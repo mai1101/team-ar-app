@@ -109,6 +109,10 @@ function getUserCards() {
 }
 
 async function saveUserCard(card) {
+  // guestId をカードオブジェクトに付与（localStorage・Firestore・メモリ全て統一）
+  const guestId = localStorage.getItem(GUEST_ID_KEY);
+  if (guestId) card.guestId = guestId;
+
   // localStorage に即時反映（photoDataUrlは除外して容量を抑える）
   const cardForStorage = { ...card };
   delete cardForStorage.photoDataUrl;
@@ -122,11 +126,7 @@ async function saveUserCard(card) {
   try {
     const data = { ...card, cottageId: _cottageId };
     delete data.author; // 投稿者名は users/{guestId}.guestName から取得するため保存しない
-    const guestId = localStorage.getItem(GUEST_ID_KEY);
-    if (guestId) {
-      data.guestId = guestId;
-      card.guestId = guestId; // メモリ上のカードにも反映して投稿直後から編集可能に
-    }
+    if (guestId) data.guestId = guestId;
     if (card.photoDataUrl) {
       data.photoBytes = await photoToFirestoreBytes(card.photoDataUrl);
       delete data.photoDataUrl;
