@@ -33,6 +33,7 @@ function showChekiModal(card) {
   const photoEl   = document.getElementById('modal-photo');
   const commentEl = document.getElementById('modal-comment');
   const authorEl  = document.getElementById('modal-author');
+  const dateEl    = document.getElementById('modal-date');
   const editBtn   = document.getElementById('modal-edit-btn');
   const delBtn    = document.getElementById('modal-delete-btn');
 
@@ -52,7 +53,8 @@ function showChekiModal(card) {
   }
 
   commentEl.textContent = card.comment;
-  authorEl.textContent  = card.author;
+  authorEl.textContent  = card.author || '';
+  if (dateEl) dateEl.textContent = _formatModalDate(card.createdAt);
 
   // 自分が投稿したカードなら編集・削除ボタンを出す
   const canEdit = !card.isPreset && _isMyCard(card);
@@ -70,4 +72,12 @@ function hideChekiModal() {
 function _isMyCard(card) {
   var myId = localStorage.getItem('cottage_canvas_guest_id');
   return !!myId && card.guestId === myId;
+}
+
+function _formatModalDate(timestamp) {
+  if (!timestamp) return '';
+  var d     = new Date(timestamp);
+  var today = new Date();
+  if (d.toDateString() === today.toDateString()) return '今日';
+  return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
 }
