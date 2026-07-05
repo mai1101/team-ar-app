@@ -54,8 +54,8 @@ function showChekiModal(card) {
   commentEl.textContent = card.comment;
   authorEl.textContent  = card.author;
 
-  // 8 時間以内のユーザーカードなら編集・削除ボタンを出す
-  const canEdit = !card.isPreset && _isWithin8Hours(card);
+  // 自分が投稿したカードなら編集・削除ボタンを出す
+  const canEdit = !card.isPreset && _isMyCard(card);
   editBtn.classList.toggle('hidden', !canEdit);
   delBtn.classList.toggle('hidden',  !canEdit);
 
@@ -67,7 +67,7 @@ function hideChekiModal() {
   _currentCard = null;
 }
 
-function _isWithin8Hours(card) {
-  if (!card.createdAt) return false;
-  return Date.now() - card.createdAt < 8 * 60 * 60 * 1000;
+function _isMyCard(card) {
+  var myId = localStorage.getItem('cottage_canvas_guest_id');
+  return !!myId && card.guestId === myId;
 }

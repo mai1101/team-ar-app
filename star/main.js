@@ -218,7 +218,7 @@ function drawConstellations(starsList) {
     if (goldenStars.length < 2) return;
 
     // 特別な星同士なので、少し離れていても繋がるようにしきい値を大きめ（15.0）に設定
-    const THRESHOLD = 15.0;
+    const THRESHOLD = 100.0;
 
     for (let i = 0; i < goldenStars.length; i++) {
         for (let j = i + 1; j < goldenStars.length; j++) {
