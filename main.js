@@ -136,6 +136,7 @@ async function loadMyMessages() {
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach((el) => (el.hidden = true));
   document.getElementById(id).hidden = false;
+  window.scrollTo(0, 0);
   // アクティブな画面のナビだけ表示
   Object.keys(_bgState).forEach((bgId) => {
     const nav = document.getElementById("page-nav-" + bgId);
