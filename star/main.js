@@ -217,7 +217,7 @@ function drawConstellations(starsList) {
     // 黄金の星が2つ未満なら終了
     if (goldenStars.length < 2) return;
 
-    const THRESHOLD = 15.0;
+    const THRESHOLD = 8.0;
 
     for (let i = 0; i < goldenStars.length; i++) {
         for (let j = i + 1; j < goldenStars.length; j++) {
@@ -235,9 +235,9 @@ function drawConstellations(starsList) {
                 lineEl.setAttribute('class', 'constellation-line');
 
                 // 太さと長さを設定 (長さに少し色をつけて星の芯まで届かせます)
-                lineEl.setAttribute('radius', '0.03');
+                lineEl.setAttribute('radius', '0.02');
                 // ★ distance に 0.5 を足して、少し長めに設定します！
-                lineEl.setAttribute('height', (distance + 0.5).toString());
+                lineEl.setAttribute('height', distance.toString());
 
                 // 色と発光感
                 lineEl.setAttribute('color', '#fefe87');
