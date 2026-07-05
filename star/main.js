@@ -101,7 +101,7 @@ function stopRecordingProcess() {
 function getRandomPosition() {
     const x = (Math.random() - 0.5) * 20;
     const y = 5 + Math.random() * 5;
-    const z = -4 - Math.random() * 6;
+    const z = -10 - Math.random() * 6;
     return { x, y, z };
 }
 
@@ -214,10 +214,9 @@ function drawConstellations(starsList) {
     // 🌟 10いいね以上の「黄金の星」だけを抽出する
     const goldenStars = starsList.filter(star => (star.likes || 0) >= 10);
 
-    // 黄金の星が2つ未満なら線は引けないので終了
+    // 黄金の星が2つ未満なら終了
     if (goldenStars.length < 2) return;
 
-    // 距離のしきい値
     const THRESHOLD = 100.0;
 
     for (let i = 0; i < goldenStars.length; i++) {
@@ -231,12 +230,32 @@ function drawConstellations(starsList) {
             const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
             if (distance < THRESHOLD) {
-                // ★ 修正箇所：<a-line> ではなく <a-entity> を使う
-                const lineEl = document.createElement('a-entity');
+                // ★ バグる「線」をやめて、「円柱（シリンダー）」で実体のある光の筒を作る！
+                const lineEl = document.createElement('a-cylinder');
                 lineEl.setAttribute('class', 'constellation-line');
 
-                // ★ 修正箇所：start, end, color などの情報を 'line' という1つの属性にまとめてセットする
-                lineEl.setAttribute('line', `start: ${starA.x} ${starA.y} ${starA.z}; end: ${starB.x} ${starB.y} ${starB.z}; color: #fefe87; opacity: 0.6`);
+                // 太さと長さを設定 (radius が線の太さになります。細くしたい場合は 0.02 などに)
+                lineEl.setAttribute('radius', '0.04');
+                lineEl.setAttribute('height', distance.toString());
+
+                // 色と発光感
+                lineEl.setAttribute('color', '#fefe87');
+                lineEl.setAttribute('material', 'shader: flat; transparent: true; opacity: 0.8');
+
+                // 位置を星Aと星Bの「真ん中」に置く
+                const midX = (starA.x + starB.x) / 2;
+                const midY = (starA.y + starB.y) / 2;
+                const midZ = (starA.z + starB.z) / 2;
+                lineEl.setAttribute('position', `${midX} ${midY} ${midZ}`);
+
+                // ★ A-Frameの裏側（Three.js）を使って、円柱の向きを星Aから星Bへ正確に繋ぐ魔法の計算
+                lineEl.addEventListener('loaded', () => {
+                    const vecB = new THREE.Vector3(starB.x, starB.y, starB.z);
+                    // 円柱を星Bの方向に向ける
+                    lineEl.object3D.lookAt(vecB);
+                    // 円柱の向きを縦から横に寝かせる（90度回転）
+                    lineEl.object3D.rotateX(Math.PI / 2);
+                });
 
                 sceneEl.appendChild(lineEl);
             }
