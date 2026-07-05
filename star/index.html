@@ -47,7 +47,39 @@
     <div id="dark-overlay"></div>
 
     <div id="message-ui">
+        <h3 style="margin-top:0;">星のメッセージ</h3>
+        <p id="msg-text"></p>
+
+        <audio id="msg-audio" controls style="display: none; width: 100%; margin-bottom: 15px;"></audio>
+
+        <div>
+            <button id="like-btn">❤️ <span id="like-count">0</span></button>
+            <button id="close-btn" class="action-btn">閉じる</button>
+        </div>
     </div>
+
+    <button id="open-post-btn">＋</button>
+
+    <div id="post-ui">
+        <h3 style="color: white; margin-bottom: 20px;">旅の思い出を残す</h3>
+        <textarea id="new-msg-input" placeholder="メッセージを入力（声だけでもOK）..."></textarea>
+
+        <div style="margin-bottom: 20px; text-align: left;">
+            <button id="record-btn" type="button"
+                style="background: #ff4757; color: white; padding: 10px 15px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">🎤
+                声を録音する</button>
+            <span id="record-status" style="color: #ff4757; margin-left: 10px; display: none; font-weight: bold;">🔴
+                録音中...</span>
+            <audio id="preview-audio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+        </div>
+
+        <div class="btn-group">
+            <button id="cancel-btn">やめる</button>
+            <button id="submit-btn">星にする</button>
+        </div>
+    </div>
+
+    <a href="../index.html" class="back-button">◀ 戻る</a>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" cursor="rayOrigin: mouse"
         raycaster="objects: .clickable" vr-mode-ui="enabled: false">
