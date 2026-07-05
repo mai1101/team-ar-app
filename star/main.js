@@ -164,9 +164,6 @@ function renderStar(id, data) {
     }
 }
 
-// --- 🌟 Global Debug State (時間連動用の変数) ---
-let debugHour = null; // nullなら現実の時間を使う
-
 // --- 背景用の反応しない細かい星を自動生成する関数 ---
 function initBackgroundStars(count = 150) {
     const sceneEl = document.querySelector('a-scene');
@@ -175,22 +172,22 @@ function initBackgroundStars(count = 150) {
     for (let i = 0; i < count; i++) {
         const starEl = document.createElement('a-sphere');
 
-        // ★追加: 後から色を変えられるようにクラス名をつける
-        starEl.setAttribute('class', 'background-star');
-
+        // メッセージの星よりも、さらに遠い背景に広く散りばめる
         const x = (Math.random() - 0.5) * 40;
         const y = 4 + Math.random() * 12;
         const z = -10 - Math.random() * 20;
 
         starEl.setAttribute('position', `${x} ${y} ${z}`);
 
+        // 背景用の細かい星なので、サイズは極小に設定
         const radius = 0.01 + Math.random() * 0.015;
         starEl.setAttribute('radius', radius.toString());
 
-        // 初期色（すぐに今の時間のカラーに上書きされます）
+        // 色は常に白。発光して見えるように shader: flat にし、アニメーション用に透明度を有効化
         starEl.setAttribute('color', '#FFFFFF');
         starEl.setAttribute('material', 'shader: flat; transparent: true; opacity: 1.0;');
 
+        // 🌟 星がチカチカと個別に瞬くように、ランダムな時間とズレ（delay）を入れたアニメーション
         const randomDur = 1000 + Math.random() * 2000;
         const randomDelay = Math.random() * 2000;
         starEl.setAttribute('animation', `property: material.opacity; from: 0.2; to: 1.0; dir: alternate; dur: ${randomDur}; delay: ${randomDelay}; loop: true; easing: easeInOutSine`);
@@ -199,63 +196,13 @@ function initBackgroundStars(count = 150) {
     }
 }
 
-// --- 🌟 時間帯ごとの星の色を計算する ---
-function calculateSkyColor(hour) {
-    if (hour >= 16 && hour <= 18) return "#FFA07A"; // 夕方（淡いオレンジ）
-    else if (hour >= 19 || hour <= 4) return "#B0E0E6"; // 夜（パウダーブルー）
-    else if (hour >= 5 && hour <= 7) return "#FFB6C1"; // 明け方（淡いピンク）
-    else return "#FFFFFF"; // 昼（白）
-}
-
-// --- 🌟 背景星の色を一気に更新する ---
-function updateBackgroundStarColors(hourToUse) {
-    const stars = document.querySelectorAll('.background-star');
-    const newColor = calculateSkyColor(hourToUse);
-
-    stars.forEach(star => {
-        // A-Frameの3Dオブジェクトの色を直接書き換える
-        if (star.object3D && star.object3D.children[0] && star.object3D.children[0].material) {
-            star.object3D.children[0].material.color.set(newColor);
-        } else {
-            star.setAttribute('color', newColor);
-        }
-    });
-}
-
-// --- 🌟 アプリの時間を更新する ---
-function updateAppTime() {
-    let hourToUse;
-    if (debugHour !== null) {
-        hourToUse = debugHour; // デバッグモード
-    } else {
-        const now = new Date();
-        hourToUse = now.getHours(); // 現実の時間
-    }
-    updateBackgroundStarColors(hourToUse);
-}
-
-// --- 空間初期化処理 ---
+// 空間の準備ができたら背景の星を生成
 const sceneEl = document.querySelector('a-scene');
 if (sceneEl.hasLoaded) {
     initBackgroundStars(150);
-    setTimeout(updateAppTime, 50); // 空間が読み込まれたら色を更新
 } else {
-    sceneEl.addEventListener('loaded', () => {
-        initBackgroundStars(150);
-        setTimeout(updateAppTime, 50);
-    });
+    sceneEl.addEventListener('loaded', () => initBackgroundStars(150));
 }
-
-// --- 🌟 デバッグ用関数 (HTMLのボタンから呼ばれる) ---
-window.setDebugTime = function (hour) {
-    debugHour = hour;
-    updateAppTime();
-};
-
-window.resetTime = function () {
-    debugHour = null;
-    updateAppTime();
-};
 // --- 自力で距離を計算して星座（線）を描画する関数 ---
 function drawConstellations(starsList) {
     const sceneEl = document.querySelector('a-scene');
