@@ -441,16 +441,17 @@ function _flipPage(bgId, direction) {
   const bg = document.getElementById(bgId);
   if (!bg) return;
 
-  const oldLayer = bg.querySelector(".page-layer");
+  const oldLayers = Array.from(bg.querySelectorAll(".page-layer"));
   const newLayer = document.createElement("div");
   newLayer.className = "page-layer";
   _placeInGrid(newLayer, state.pages[next]);
   bg.appendChild(newLayer);
 
-  if (oldLayer) {
-    oldLayer.classList.add(direction > 0 ? "flip-out-next" : "flip-out-prev");
-    setTimeout(() => oldLayer.remove(), 300);
-  }
+  const outClass = direction > 0 ? "flip-out-next" : "flip-out-prev";
+  oldLayers.forEach(layer => {
+    layer.classList.add(outClass);
+    setTimeout(() => layer.remove(), 300);
+  });
   newLayer.classList.add(direction > 0 ? "flip-in-next" : "flip-in-prev");
 
   state.currentPage = next;
