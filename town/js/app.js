@@ -4,7 +4,7 @@
 
 const TARGET_SRC = 'assets/targets.mind';
 const APP_VERSION = 'v8';
-const BUILD_NUM   = 10; // プッシュごとに +1 する
+const BUILD_NUM   = 11; // プッシュごとに +1 する
 
 let _targetFound    = false;
 let _pendingLocalPos = null; // 配置ピンの AR 座標
@@ -94,11 +94,11 @@ async function main() {
 
   // ── 編集フォーム ─────────────────────────────────────────────
   initEditForm(updatedCard => {
-    // テクスチャを再描画して Three.js メッシュに反映
+    // コメントだけ更新（photoDataUrl など他フィールドはメモリ上の card を維持）
     const mesh = getChekiMeshes().get(updatedCard.id);
     if (mesh) {
-      mesh.userData.card = updatedCard;
-      refreshChekiTexture(mesh, updatedCard);
+      mesh.userData.card.comment = updatedCard.comment;
+      refreshChekiTexture(mesh, mesh.userData.card);
     }
   });
 
