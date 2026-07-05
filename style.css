@@ -388,12 +388,12 @@ body {
 .btn--outline:hover { background: var(--surface2); }
 
 /* ===== チェックイン後：3ゾーンレイアウト ===== */
-#screen-checkin {
+#screen-checkin:not([hidden]) {
   display: flex;
   flex-direction: column;
 }
 
-#screen-checkin .container {
+#screen-checkin:not([hidden]) .container {
   flex: 1;
   display: flex;
   flex-direction: column;
