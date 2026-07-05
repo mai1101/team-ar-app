@@ -234,9 +234,10 @@ function drawConstellations(starsList) {
                 const lineEl = document.createElement('a-cylinder');
                 lineEl.setAttribute('class', 'constellation-line');
 
-                // 太さと長さを設定 (radius が線の太さになります。細くしたい場合は 0.02 などに)
-                lineEl.setAttribute('radius', '0.04');
-                lineEl.setAttribute('height', distance.toString());
+                // 太さと長さを設定 (長さに少し色をつけて星の芯まで届かせます)
+                lineEl.setAttribute('radius', '0.03');
+                // ★ distance に 0.5 を足して、少し長めに設定します！
+                lineEl.setAttribute('height', (distance + 0.5).toString());
 
                 // 色と発光感
                 lineEl.setAttribute('color', '#fefe87');
