@@ -408,7 +408,10 @@ function _placeInGrid(container, images) {
   }
   cells.sort(() => Math.random() - 0.5);
 
-  images.forEach((src, i) => {
+  images.forEach((item, i) => {
+    const src     = typeof item === "string" ? item : item.src;
+    const isPhoto = typeof item === "object" && item.isPhoto;
+
     const [c, r] = cells[i] ?? [Math.floor(Math.random() * COLS), 0];
 
     const wrapper = document.createElement("div");
@@ -417,15 +420,17 @@ function _placeInGrid(container, images) {
     wrapper.style.top       = (r * CELL_H + Math.random() * 18) + "px";
     wrapper.style.transform = `rotate(${(Math.random() - 0.5) * 40}deg)`;
 
-    const tape = document.createElement("div");
-    tape.className = "tape";
-    tape.style.background = TAPE_COLORS[i % TAPE_COLORS.length];
-    tape.style.transform  = `translateX(-50%) rotate(${(Math.random() - 0.5) * 8}deg)`;
+    if (isPhoto) {
+      const tape = document.createElement("div");
+      tape.className = "tape";
+      tape.style.background = TAPE_COLORS[i % TAPE_COLORS.length];
+      tape.style.transform  = `translateX(-50%) rotate(${(Math.random() - 0.5) * 8}deg)`;
+      wrapper.appendChild(tape);
+    }
 
     const img = document.createElement("img");
     img.src = src;
 
-    wrapper.appendChild(tape);
     wrapper.appendChild(img);
     container.appendChild(wrapper);
   });
@@ -551,7 +556,10 @@ async function loadDrawingsBg() {
       }
     }
 
-    const images = [...drawingImages, ...spotImages].sort(() => Math.random() - 0.5);
+    const images = [
+      ...drawingImages.map(src => ({ src, isPhoto: false })),
+      ...spotImages.map(src => ({ src, isPhoto: true })),
+    ].sort(() => Math.random() - 0.5);
     if (images.length === 0) return;
 
     // PAGE_SIZE ごとにページ分割
