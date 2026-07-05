@@ -361,6 +361,24 @@ body:has(#placement-overlay:not(.hidden)) #footer {
   text-align: right;
   margin-top: 2px;
 }
+#modal-like-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+#modal-like-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+#modal-like-count {
+  font-size: 14px;
+  color: #888;
+}
 
 #modal-actions {
   display: flex;

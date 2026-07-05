@@ -170,6 +170,16 @@ function setMeshesVisible(visible) {
   _arGhostLineMap.forEach(function(entry) { entry.mesh.visible = visible; });
 }
 
+// ── いいね数順に renderOrder を更新（多いほど前面）────────────────
+function updateChekiRenderOrders() {
+  var entries = [];
+  _arMeshMap.forEach(function(mesh) {
+    entries.push({ likeCount: mesh.userData.card ? (mesh.userData.card.likeCount || 0) : 0, mesh: mesh });
+  });
+  entries.sort(function(a, b) { return a.likeCount - b.likeCount; });
+  entries.forEach(function(e, i) { e.mesh.renderOrder = i; });
+}
+
 // ── 元位置↔現在位置をつなぐ太線（PlaneGeometry で WebGL 制限を回避）──
 var _arGhostLineMap = new Map(); // card.id → { mesh, fromPos }
 var _GHOST_THICKNESS = 0.006;   // 太さ（AR unit）
