@@ -123,7 +123,10 @@ async function saveUserCard(card) {
     const data = { ...card, cottageId: _cottageId };
     delete data.author; // 投稿者名は users/{guestId}.guestName から取得するため保存しない
     const guestId = localStorage.getItem(GUEST_ID_KEY);
-    if (guestId) data.guestId = guestId;
+    if (guestId) {
+      data.guestId = guestId;
+      card.guestId = guestId; // メモリ上のカードにも反映して投稿直後から編集可能に
+    }
     if (card.photoDataUrl) {
       data.photoBytes = await photoToFirestoreBytes(card.photoDataUrl);
       delete data.photoDataUrl;
