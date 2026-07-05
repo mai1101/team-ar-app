@@ -4,7 +4,7 @@
 
 const TARGET_SRC = 'assets/targets.mind';
 const APP_VERSION = 'v8';
-const BUILD_NUM   = 6; // プッシュごとに +1 する
+const BUILD_NUM   = 7; // プッシュごとに +1 する
 
 let _targetFound    = false;
 let _pendingLocalPos = null; // 配置ピンの AR 座標
@@ -53,12 +53,13 @@ async function main() {
   }
 
   // ── プリセット + ユーザーカードを読み込んでメッシュ生成 ────────
-  const userCards = await loadUserCardsFromFirestore();
-  const allCards  = [...PRESET_CARDS, ...userCards];
-  const positions = computeCardPositions(allCards);
+  const userCards      = await loadUserCardsFromFirestore();
+  const seasonPresets  = PRESET_CARDS.filter(c => isInSeasonalWindow(c.createdAt));
+  const allCards       = [...seasonPresets, ...userCards];
+  const positions      = computeCardPositions(allCards);
 
   // プリセットは同期追加（キャンバスが確定しているため）
-  for (const card of PRESET_CARDS) {
+  for (const card of seasonPresets) {
     const pos = positions[card.id];
     if (pos) addChekiMesh(card, pos);
   }

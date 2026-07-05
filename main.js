@@ -6,6 +6,7 @@ import {
   getDocs,
   doc,
   getDoc,
+  setDoc,
   updateDoc,
   orderBy,
   limit,
@@ -41,8 +42,9 @@ const db = getFirestore(app);
 const params = new URLSearchParams(window.location.search);
 const cottageId = params.get("cottage") || "07";
 
-const VISIT_ID_KEY = "cottage_canvas_visit_id";
-const GUEST_ID_KEY = "cottage_canvas_guest_id";
+const VISIT_ID_KEY  = "cottage_canvas_visit_id";
+const GUEST_ID_KEY  = "cottage_canvas_guest_id";
+const GUEST_NAME_KEY = "cottage_canvas_guest_name";
 
 const PAGE_SIZE = 21;
 const _bgState  = {}; // { bgId: { pages, currentPage, screenId } }
@@ -158,14 +160,23 @@ async function handleCheckin() {
   errorEl.textContent = "";
 
   try {
+    const guestId = getOrCreateGuestId();
     const ref = await addDoc(collection(db, "visits"), {
       cottageId,
       guestName,
-      guestId: getOrCreateGuestId(),
+      guestId,
       checkedInAt: serverTimestamp(),
       checkedOutAt: null,
     });
     localStorage.setItem(VISIT_ID_KEY, ref.id);
+
+    // users コレクションに名前を登録（複数回チェックイン時は上書き）
+    await setDoc(doc(db, "users", guestId), {
+      guestName,
+      cottageId,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    localStorage.setItem(GUEST_NAME_KEY, guestName);
 
     document.getElementById("checkin-form").hidden = true;
     document.getElementById("after-checkin").hidden = false;

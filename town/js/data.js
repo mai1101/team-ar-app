@@ -34,6 +34,7 @@ const PRESET_CARDS = [
     colors: ['#ff9a3c', '#f7c59f'],
     icon: 'lake-sunset',
     isPreset: true,
+    createdAt: new Date('2025-10-04').getTime(),
   },
   {
     id: 'preset-1',
@@ -43,6 +44,7 @@ const PRESET_CARDS = [
     colors: ['#a8edea', '#96c8e8'],
     icon: 'lake-swan',
     isPreset: true,
+    createdAt: new Date('2025-11-22').getTime(),
   },
   {
     id: 'preset-2',
@@ -52,6 +54,7 @@ const PRESET_CARDS = [
     colors: ['#ffd89b', '#e88c6a'],
     icon: 'lake-dawn',
     isPreset: true,
+    createdAt: new Date('2025-10-18').getTime(),
   },
   {
     id: 'preset-3',
@@ -61,6 +64,7 @@ const PRESET_CARDS = [
     colors: ['#56ab2f', '#a8e063'],
     icon: 'forest',
     isPreset: true,
+    createdAt: new Date('2025-06-08').getTime(),
   },
   {
     id: 'preset-4',
@@ -70,6 +74,7 @@ const PRESET_CARDS = [
     colors: ['#1a5c36', '#2d7a4f'],
     icon: 'forest-deep',
     isPreset: true,
+    createdAt: new Date('2025-09-13').getTime(),
   },
   {
     id: 'preset-5',
@@ -79,8 +84,33 @@ const PRESET_CARDS = [
     colors: ['#c94b4b', '#8b1a1a'],
     icon: 'shrine',
     isPreset: true,
+    createdAt: new Date('2026-01-02').getTime(),
   },
 ];
+
+// ── 季節フィルタ ──────────────────────────────────────────────────
+// 今日の前後45日の「月日」に一致するカードのみ表示（年をまたいで比較）
+function isInSeasonalWindow(createdAtMs) {
+  if (!createdAtMs) return true;
+  var today    = new Date();
+  var refStart = new Date(today); refStart.setDate(today.getDate() - 45);
+  var refEnd   = new Date(today); refEnd.setDate(today.getDate() + 45);
+
+  // 年を揃えて月日だけで比較（基準年 2000 を使用）
+  var Y = 2000;
+  function toMD(d) { return new Date(Y, d.getMonth(), d.getDate()).getTime(); }
+
+  var cardMD  = toMD(new Date(createdAtMs));
+  var startMD = toMD(refStart);
+  var endMD   = toMD(refEnd);
+
+  if (startMD <= endMD) {
+    return cardMD >= startMD && cardMD <= endMD;
+  } else {
+    // 年をまたぐ窓（例: 11月〜2月）
+    return cardMD >= startMD || cardMD <= endMD;
+  }
+}
 
 // ── ランダムに見えるが再現性のある傾き角を id から計算 ─────────────
 function deterministicRotation(id) {
