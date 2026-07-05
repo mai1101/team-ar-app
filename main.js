@@ -463,22 +463,23 @@ function _flipPage(bgId, direction) {
 
 // ---- スワイプでページめくり ----
 function _initSwipe(screenId, bgId) {
-  const screen = document.getElementById(screenId);
-  if (!screen) return;
-
   let startX = 0;
   let startY = 0;
 
-  screen.addEventListener("touchstart", (e) => {
+  document.addEventListener("touchstart", (e) => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
   }, { passive: true });
 
-  screen.addEventListener("touchend", (e) => {
+  document.addEventListener("touchend", (e) => {
+    // このbgIdに対応する画面が表示中のときだけ反応
+    const screen = document.getElementById(screenId);
+    if (!screen || screen.hidden) return;
+
     const deltaX = e.changedTouches[0].clientX - startX;
     const deltaY = e.changedTouches[0].clientY - startY;
-    if (Math.abs(deltaX) < 50) return;               // 短すぎるスワイプは無視
-    if (Math.abs(deltaY) > Math.abs(deltaX)) return; // 縦スクロールは無視
+    if (Math.abs(deltaX) < 50) return;
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return;
     _flipPage(bgId, deltaX < 0 ? 1 : -1);
   }, { passive: true });
 }
