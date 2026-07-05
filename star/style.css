@@ -4,17 +4,16 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    position: fixed;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     touch-action: manipulation;
 }
 
 a-scene {
-    position: fixed !important;
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100% !important;
-    height: 100% !important;
+    width: 100%;
+    height: 100%;
 }
 
 #dark-overlay {
