@@ -399,7 +399,7 @@ body {
   flex-direction: column;
 }
 
-#after-checkin {
+#after-checkin:not([hidden]) {
   flex: 1;
   display: flex;
   flex-direction: column;
