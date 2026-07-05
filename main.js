@@ -450,6 +450,28 @@ function _flipPage(bgId, direction) {
   if (screen) screen.classList.toggle("margin-right", next % 2 === 1);
 }
 
+// ---- スワイプでページめくり ----
+function _initSwipe(screenId, bgId) {
+  const screen = document.getElementById(screenId);
+  if (!screen) return;
+
+  let startX = 0;
+  let startY = 0;
+
+  screen.addEventListener("touchstart", (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  screen.addEventListener("touchend", (e) => {
+    const deltaX = e.changedTouches[0].clientX - startX;
+    const deltaY = e.changedTouches[0].clientY - startY;
+    if (Math.abs(deltaX) < 50) return;               // 短すぎるスワイプは無視
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return; // 縦スクロールは無視
+    _flipPage(bgId, deltaX < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
 // ---- 背景にページめくりで絵を表示 ----
 async function loadDrawingsBg() {
   try {
@@ -488,6 +510,7 @@ async function loadDrawingsBg() {
       bg.appendChild(layer);
 
       _createPageNav(bgId, screenId, pages.length);
+      _initSwipe(screenId, bgId);
     });
   } catch (err) {
     console.error("背景絵の読み込みエラー:", err);
