@@ -116,7 +116,7 @@ function renderStar(id, data) {
     const hitbox = document.createElement('a-entity');
     hitbox.setAttribute('id', id);
     hitbox.setAttribute('class', 'clickable');
-    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 1.0');
+    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 0.8');
     hitbox.setAttribute('material', 'opacity: 0; transparent: true; depthWrite: false;');
     hitbox.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
 
