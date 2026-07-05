@@ -46,7 +46,7 @@
   object-fit: cover;
   object-position: center;
   mix-blend-mode: multiply;
-  margin-top: 14px;
+  margin-top: 32px;
   transform: rotate(6deg);
 }
 #splash-fp-bottom {
@@ -57,7 +57,7 @@
   object-fit: cover;
   object-position: center;
   mix-blend-mode: multiply;
-  margin-bottom: 14px;
+  margin-bottom: 32px;
   transform: rotate(-6deg);
 }
 
