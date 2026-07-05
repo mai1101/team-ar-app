@@ -217,7 +217,7 @@ function drawConstellations(starsList) {
     // 黄金の星が2つ未満なら線は引けないので終了
     if (goldenStars.length < 2) return;
 
-    // 特別な星同士なので、少し離れていても繋がるようにしきい値を大きめ（15.0）に設定
+    // 距離のしきい値
     const THRESHOLD = 100.0;
 
     for (let i = 0; i < goldenStars.length; i++) {
@@ -231,15 +231,12 @@ function drawConstellations(starsList) {
             const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
             if (distance < THRESHOLD) {
-                const lineEl = document.createElement('a-line');
+                // ★ 修正箇所：<a-line> ではなく <a-entity> を使う
+                const lineEl = document.createElement('a-entity');
                 lineEl.setAttribute('class', 'constellation-line');
-                lineEl.setAttribute('start', `${starA.x} ${starA.y} ${starA.z}`);
-                lineEl.setAttribute('end', `${starB.x} ${starB.y} ${starB.z}`);
 
-                // 🌟 黄金の星同士を繋ぐので、線も神々しいゴールドに！
-                lineEl.setAttribute('color', '#fefe87');
-                lineEl.setAttribute('opacity', '0.6');
-                lineEl.setAttribute('material', 'shader: flat; transparent: true');
+                // ★ 修正箇所：start, end, color などの情報を 'line' という1つの属性にまとめてセットする
+                lineEl.setAttribute('line', `start: ${starA.x} ${starA.y} ${starA.z}; end: ${starB.x} ${starB.y} ${starB.z}; color: #fefe87; opacity: 0.6`);
 
                 sceneEl.appendChild(lineEl);
             }
