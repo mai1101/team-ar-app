@@ -3,55 +3,57 @@
 
 <head>
     <meta charset="utf-8">
-    <title>星空メッセージAR (音声メッセージ版)</title>
+    <title>星空メッセージAR (時間連動デバッグ版)</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        #debug-time-ui {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .debug-btn {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .debug-btn:hover {
+            background: white;
+        }
+    </style>
 </head>
 
 <body>
 
+    <div id="debug-time-ui">
+        <button class="debug-btn" onclick="setDebugTime(6)">朝 (6h)</button>
+        <button class="debug-btn" onclick="setDebugTime(12)">昼 (12h)</button>
+        <button class="debug-btn" onclick="setDebugTime(17)">夕方 (17h)</button>
+        <button class="debug-btn" onclick="setDebugTime(21)">夜 (21h)</button>
+        <button class="debug-btn" onclick="resetTime()">自動（現実）</button>
+    </div>
+
     <div id="dark-overlay"></div>
 
     <div id="message-ui">
-        <h3 style="margin-top:0;">星のメッセージ</h3>
-        <p id="msg-text"></p>
-
-        <audio id="msg-audio" controls style="display: none; width: 100%; margin-bottom: 15px;"></audio>
-
-        <div>
-            <button id="like-btn">❤️ <span id="like-count">0</span></button>
-            <button id="close-btn" class="action-btn">閉じる</button>
-        </div>
     </div>
-
-    <button id="open-post-btn">＋</button>
-
-    <div id="post-ui">
-        <h3 style="color: white; margin-bottom: 20px;">旅の思い出を残す</h3>
-        <textarea id="new-msg-input" placeholder="メッセージを入力（声だけでもOK）..."></textarea>
-
-        <div style="margin-bottom: 20px; text-align: left;">
-            <button id="record-btn" type="button"
-                style="background: #ff4757; color: white; padding: 10px 15px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">🎤
-                声を録音する</button>
-            <span id="record-status" style="color: #ff4757; margin-left: 10px; display: none; font-weight: bold;">🔴
-                録音中...</span>
-            <audio id="preview-audio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
-        </div>
-
-        <div class="btn-group">
-            <button id="cancel-btn">やめる</button>
-            <button id="submit-btn">星にする</button>
-        </div>
-    </div>
-
-    <a href="../index.html" class="back-button">◀ 戻る</a>
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" cursor="rayOrigin: mouse"
-        raycaster="objects: .clickable; far: 30;" vr-mode-ui="enabled: false">
+        raycaster="objects: .clickable" vr-mode-ui="enabled: false">
         <a-camera></a-camera>
     </a-scene>
+
     <script type="module" src="main.js"></script>
 </body>
 
