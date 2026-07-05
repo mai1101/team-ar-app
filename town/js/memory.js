@@ -121,6 +121,7 @@ async function saveUserCard(card) {
   _showToast('保存中...');
   try {
     const data = { ...card, cottageId: _cottageId };
+    delete data.author; // 投稿者名は users/{guestId}.guestName から取得するため保存しない
     const guestId = localStorage.getItem(GUEST_ID_KEY);
     if (guestId) data.guestId = guestId;
     if (card.photoDataUrl) {
