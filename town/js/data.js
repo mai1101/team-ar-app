@@ -25,68 +25,7 @@ const CANVAS_H  = 250;
 const PHOTO_H   = 168; // 写真エリアの高さ
 
 // ── プリセットチェキデータ ────────────────────────────────────────
-const PRESET_CARDS = [
-  {
-    id: 'preset-0',
-    spot: '鏡湖',
-    comment: '夕暮れの鏡湖、最高でした🌅 水面がオレンジに染まって。',
-    author: 'Aさん・2025/10/04',
-    colors: ['#ff9a3c', '#f7c59f'],
-    icon: 'lake-sunset',
-    isPreset: true,
-    createdAt: new Date('2025-10-04').getTime(),
-  },
-  {
-    id: 'preset-1',
-    spot: '鏡湖',
-    comment: '白鳥が2羽いてびっくり！人懐っこくて癒されました🦢',
-    author: 'Bさん・2025/11/22',
-    colors: ['#a8edea', '#96c8e8'],
-    icon: 'lake-swan',
-    isPreset: true,
-    createdAt: new Date('2025-11-22').getTime(),
-  },
-  {
-    id: 'preset-2',
-    spot: '鏡湖',
-    comment: '早起きして正解！朝焼けが幻想的で泣きそうに😭✨',
-    author: 'Cさん・2025/10/18',
-    colors: ['#ffd89b', '#e88c6a'],
-    icon: 'lake-dawn',
-    isPreset: true,
-    createdAt: new Date('2025-10-18').getTime(),
-  },
-  {
-    id: 'preset-3',
-    spot: '鎮守の森',
-    comment: '木漏れ日がすごく綺麗🌿 1時間ぼーっとしてました。',
-    author: 'Dさん・2025/6/08',
-    colors: ['#56ab2f', '#a8e063'],
-    icon: 'forest',
-    isPreset: true,
-    createdAt: new Date('2025-06-08').getTime(),
-  },
-  {
-    id: 'preset-4',
-    spot: '鎮守の森',
-    comment: 'マイナスイオンたっぷり🌲 スマホ忘れて散策してた笑',
-    author: 'Eさん・2025/9/13',
-    colors: ['#1a5c36', '#2d7a4f'],
-    icon: 'forest-deep',
-    isPreset: true,
-    createdAt: new Date('2025-09-13').getTime(),
-  },
-  {
-    id: 'preset-5',
-    spot: '八雲神社',
-    comment: '八雲神社、荘厳な雰囲気✨ 御朱印300円でいただきました！',
-    author: 'Fさん・2026/1/02',
-    colors: ['#c94b4b', '#8b1a1a'],
-    icon: 'shrine',
-    isPreset: true,
-    createdAt: new Date('2026-01-02').getTime(),
-  },
-];
+const PRESET_CARDS = [];
 
 // ── 季節フィルタ ──────────────────────────────────────────────────
 // 今日の前後45日の「月日」に一致するカードのみ表示（年をまたいで比較）
