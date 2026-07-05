@@ -370,10 +370,10 @@ body:has(#placement-overlay:not(.hidden)) #footer {
 #modal-like-btn {
   background: none;
   border: none;
-  font-size: 22px;
   cursor: pointer;
   padding: 0;
-  line-height: 1;
+  display: flex;
+  align-items: center;
 }
 #modal-like-count {
   font-size: 14px;
