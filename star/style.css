@@ -1,148 +1,159 @@
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            touch-action: manipulation;
-            /* ←これを追加！ズームなどを防ぎ、タップを超高速化します */
-        }
+/* ★追加：タップのズレを防ぐための絶対固定魔法 */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed;
+    /* iPhone特有の画面の揺れやアドレスバーのズレを封印 */
+    width: 100vw;
+    height: 100vh;
+}
 
-        #dark-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            z-index: -1;
-            pointer-events: none;
-        }
+a-scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
 
-        #message-ui {
-            position: absolute;
-            bottom: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
-            max-width: 400px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 10;
-            text-align: center;
-        }
+#dark-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: -1;
+    pointer-events: none;
+}
 
-        #message-ui.active {
-            bottom: 40px;
-        }
+#message-ui {
+    position: absolute;
+    bottom: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 10;
+    text-align: center;
+}
 
-        #like-btn {
-            background: #ffebee;
-            color: #d32f2f;
-            border: 2px solid #ffcdd2;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s;
-            margin-right: 10px;
-        }
+#message-ui.active {
+    bottom: 40px;
+}
 
-        #like-btn:active {
-            transform: scale(0.9);
-        }
+#like-btn {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 2px solid #ffcdd2;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+    margin-right: 10px;
+}
 
-        .action-btn {
-            padding: 10px 20px;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-        }
+#like-btn:active {
+    transform: scale(0.9);
+}
 
-        #open-post-btn {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            border-radius: 30px;
-            background: #E0FFFF;
-            color: #333;
-            font-size: 24px;
-            font-weight: bold;
-            border: none;
-            box-shadow: 0 0 15px rgba(224, 255, 255, 0.6);
-            cursor: pointer;
-            z-index: 5;
-        }
+.action-btn {
+    padding: 10px 20px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
 
-        #post-ui {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 20;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
+#open-post-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    background: #E0FFFF;
+    color: #333;
+    font-size: 24px;
+    font-weight: bold;
+    border: none;
+    box-shadow: 0 0 15px rgba(224, 255, 255, 0.6);
+    cursor: pointer;
+    z-index: 5;
+}
 
-        #post-ui.active {
-            display: flex;
-        }
+#post-ui {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 20;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
 
-        #new-msg-input {
-            width: 80%;
-            max-width: 300px;
-            height: 100px;
-            padding: 15px;
-            border-radius: 12px;
-            border: none;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
+#post-ui.active {
+    display: flex;
+}
 
-        .btn-group button {
-            padding: 12px 25px;
-            margin: 0 10px;
-            border: none;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+#new-msg-input {
+    width: 80%;
+    max-width: 300px;
+    height: 100px;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
 
-        #submit-btn {
-            background: #E0FFFF;
-            color: #333;
-        }
+.btn-group button {
+    padding: 12px 25px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
 
-        #cancel-btn {
-            background: #666;
-            color: white;
-        }
+#submit-btn {
+    background: #E0FFFF;
+    color: #333;
+}
 
-        .back-button {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            padding: 10px 18px;
-            background-color: rgba(255, 255, 255, 0.85);
-            /* 少し透ける白 */
-            color: #333;
-            text-decoration: none;
-            font-weight: bold;
-            border-radius: 20px;
-            z-index: 9999;
-            /* AR画面の裏に隠れないように最前面に出す絶対魔法 */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            /* 軽い影をつけて浮かせます */
-        }
+#cancel-btn {
+    background: #666;
+    color: white;
+}
+
+.back-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    padding: 10px 18px;
+    background-color: rgba(255, 255, 255, 0.85);
+    /* 少し透ける白 */
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 20px;
+    z-index: 9999;
+    /* AR画面の裏に隠れないように最前面に出す絶対魔法 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* 軽い影をつけて浮かせます */
+}
