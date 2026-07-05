@@ -78,7 +78,7 @@ async function loadVisitCount() {
   }
 }
 
-// ---- 自分の過去の投稿を読み込み ----
+// ---- 自分の地図への投稿を読み込み ----
 async function loadMyMessages() {
   const list = document.getElementById("my-message-list");
   list.innerHTML = '<p class="loading-text">読み込み中...</p>';
@@ -86,11 +86,7 @@ async function loadMyMessages() {
   const guestId = getOrCreateGuestId();
   try {
     const snapshot = await getDocs(
-      query(
-        collection(db, "messages"),
-        where("guestId", "==", guestId),
-        orderBy("createdAt", "desc")
-      )
+      query(collection(db, "spots"), where("guestId", "==", guestId))
     );
 
     if (snapshot.empty) {
@@ -98,20 +94,38 @@ async function loadMyMessages() {
       return;
     }
 
+    const docs = snapshot.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
     list.innerHTML = "";
-    snapshot.forEach((docSnap) => {
-      const d = docSnap.data();
-      const dateStr = d.createdAt?.toDate ? formatDate(d.createdAt.toDate()) : "";
+    for (const d of docs) {
+      const dateStr  = d.createdAt ? formatDate(new Date(d.createdAt)) : "";
+      const spotName = d.spot && d.spot !== "__manual__" ? d.spot : "地図上";
+
+      let photoHtml = "";
+      if (d.photoBytes) {
+        try {
+          const uint8  = d.photoBytes.toUint8Array();
+          let binary   = "";
+          uint8.forEach(b => (binary += String.fromCharCode(b)));
+          const base64 = btoa(binary);
+          photoHtml = `<img src="data:image/jpeg;base64,${base64}" class="history-photo" alt="投稿写真">`;
+        } catch (e) {
+          console.warn("photo変換エラー", e);
+        }
+      }
+
       list.innerHTML += `
         <div class="message-card">
           <div class="message-card__header">
-            <span class="message-card__author">${escapeHtml(d.authorName || "旅人")}</span>
+            <span class="message-card__author">📍 ${escapeHtml(spotName)}</span>
             ${dateStr ? `<span class="message-card__date">${dateStr}</span>` : ""}
           </div>
-          ${d.cottageId ? `<span class="message-card__cottage">コテージ No.${escapeHtml(d.cottageId)}</span>` : ""}
-          <p class="message-card__text">${escapeHtml(d.text)}</p>
+          ${photoHtml}
+          ${d.comment ? `<p class="message-card__text">${escapeHtml(d.comment)}</p>` : ""}
         </div>`;
-    });
+    }
   } catch (err) {
     console.error("過去の投稿取得エラー:", err);
     list.innerHTML = '<p class="error-text">取得に失敗しました。</p>';

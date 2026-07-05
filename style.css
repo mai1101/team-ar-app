@@ -387,27 +387,75 @@ body {
 }
 .btn--outline:hover { background: var(--surface2); }
 
-/* ===== チェックイン後のボタン群 ===== */
-.welcome-message {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #5a4200;
-  background: #fffacc;
-  border-radius: var(--radius);
-  padding: 0.85rem 1rem;
-  margin-bottom: 1rem;
+/* ===== チェックイン後：3ゾーンレイアウト ===== */
+#screen-checkin {
+  display: flex;
+  flex-direction: column;
+}
+
+#screen-checkin .container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+#after-checkin {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-bottom: 1.5rem;
+}
+
+.after-checkin__top {
+  padding-top: 2rem;
   text-align: center;
-  box-shadow: 2px 3px 5px rgba(0,0,0,0.08);
+}
+
+.welcome-title {
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin-bottom: 0.5rem;
+}
+
+.welcome-sub {
+  font-size: 0.9rem;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.after-checkin__middle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.after-checkin__bottom {
+  padding-top: 1rem;
 }
 
 .action-buttons {
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
 }
 
 .action-buttons .btn {
   flex: 1;
+}
+
+.btn--green {
+  background: #2f4a2f;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.btn--green:hover { background: #1e3420; }
+
+.btn--action {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+  font-size: 1rem;
 }
 
 /* ===== 完了画面 ===== */
@@ -439,6 +487,60 @@ body {
   font-size: 0.98rem;
   color: var(--text-sub);
   line-height: 2;
+}
+
+/* ===== 付箋ナビ（完了画面） ===== */
+.sticky-nav {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  margin: 0.5rem 0 1.2rem;
+}
+
+.sticky-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 110px;
+  border-radius: 2px;
+  text-decoration: none;
+  box-shadow: 3px 4px 10px rgba(0,0,0,0.18), inset 0 -3px 0 rgba(0,0,0,0.08);
+  transform: rotate(-2deg);
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  gap: 0.4rem;
+}
+
+.sticky-btn:nth-child(2) {
+  transform: rotate(1.5deg);
+}
+
+.sticky-btn:active {
+  transform: rotate(0deg) scale(0.96);
+  box-shadow: 1px 2px 5px rgba(0,0,0,0.18);
+}
+
+.sticky-btn--yellow {
+  background: #fff176;
+}
+
+.sticky-btn--blue {
+  background: #b3e5fc;
+}
+
+.sticky-btn__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.sticky-btn__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333;
+  font-family: var(--font);
+  letter-spacing: 0.03em;
 }
 
 /* ===== エラー ===== */
@@ -519,6 +621,15 @@ body {
   width: 100%;
   aspect-ratio: 8 / 5;
   object-fit: contain;
+}
+
+.history-photo {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  object-fit: cover;
+  max-height: 200px;
 }
 
 .drawing-thumb__label {
