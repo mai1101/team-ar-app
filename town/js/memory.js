@@ -79,6 +79,11 @@ async function loadUserCardsFromFirestore() {
       });
     }
 
+    // likeCount を likes マップから算出
+    cards.forEach(function(card) {
+      card.likeCount = Object.keys(card.likes || {}).length;
+    });
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
     return cards.filter(function(c) { return isInSeasonalWindow(c.createdAt); });
   } catch (err) {
@@ -86,9 +91,41 @@ async function loadUserCardsFromFirestore() {
     // Firestore が使えないときは localStorage にフォールバック
     try {
       var cached = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      cached.forEach(function(card) {
+        card.likeCount = Object.keys(card.likes || {}).length;
+      });
       return cached.filter(function(c) { return isInSeasonalWindow(c.createdAt); });
     } catch { return []; }
   }
+}
+
+// ── いいね トグル ────────────────────────────────────────────────
+async function toggleLike(cardId, card) {
+  var guestId = localStorage.getItem(GUEST_ID_KEY);
+  if (!guestId) return null;
+
+  var alreadyLiked = !!(card.likes && card.likes[guestId]);
+  card.likes = card.likes || {};
+  if (alreadyLiked) {
+    delete card.likes[guestId];
+  } else {
+    card.likes[guestId] = true;
+  }
+  card.likeCount = Object.keys(card.likes).length;
+
+  var fieldKey = 'likes.' + guestId;
+  try {
+    if (alreadyLiked) {
+      await db.collection('spots').doc(cardId).update(
+        { [fieldKey]: firebase.firestore.FieldValue.delete() }
+      );
+    } else {
+      await db.collection('spots').doc(cardId).update({ [fieldKey]: true });
+    }
+  } catch (e) {
+    console.warn('[Firestore] いいね更新エラー:', e);
+  }
+  return !alreadyLiked; // true=いいね済, false=取り消し
 }
 
 // ── トースト通知 ──────────────────────────────────────────────────

@@ -4,7 +4,7 @@
 
 const TARGET_SRC = 'assets/targets.mind';
 const APP_VERSION = 'v8';
-const BUILD_NUM   = 13; // プッシュごとに +1 する
+const BUILD_NUM   = 14; // プッシュごとに +1 する
 
 let _targetFound    = false;
 let _pendingLocalPos = null; // 配置ピンの AR 座標
@@ -70,6 +70,9 @@ async function main() {
     if (pos) await addChekiMeshAsync(card, pos);
   }
 
+  // 初期 renderOrder をいいね数で設定
+  updateChekiRenderOrders();
+
   // ── インタラクション初期化 ─────────────────────────────────────
   // MindAR が生成した canvas にイベントをアタッチ
   const arCanvas = container.querySelector('canvas');
@@ -90,6 +93,11 @@ async function main() {
     },
     // onEdit
     card => showEditForm(card),
+    // onLike
+    async card => {
+      await toggleLike(card.id, card);
+      updateChekiRenderOrders();
+    },
   );
 
   // ── 編集フォーム ─────────────────────────────────────────────

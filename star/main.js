@@ -54,7 +54,10 @@ if (recordBtn) {
                 };
 
                 mediaRecorder.onstop = () => {
-                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    // ★修正：iPhoneならmp4、PCならwebmなど、端末の標準形式を自動取得する
+                    const mimeType = mediaRecorder.mimeType || 'audio/mp4';
+                    audioBlob = new Blob(audioChunks, { type: mimeType });
+
                     const audioUrl = URL.createObjectURL(audioBlob);
                     previewAudio.src = audioUrl;
                     previewAudio.style.display = 'block';
@@ -113,7 +116,7 @@ function renderStar(id, data) {
     const hitbox = document.createElement('a-entity');
     hitbox.setAttribute('id', id);
     hitbox.setAttribute('class', 'clickable');
-    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 1.0');
+    hitbox.setAttribute('geometry', 'primitive: sphere; radius: 0.8');
     hitbox.setAttribute('material', 'opacity: 0; transparent: true; depthWrite: false;');
     hitbox.setAttribute('position', `${data.x} ${data.y} ${data.z}`);
 
@@ -269,7 +272,10 @@ onSnapshot(collection(db, "stars"), (snapshot) => {
         const data = doc.data();
         // 🔊 読み込み時：音声Bytes型をBase64（再生可能なURL）に復元
         if (data.audioBytes) {
-            data.audioDataUrl = 'data:audio/webm;base64,' + data.audioBytes.toBase64();
+            // ★修正：保存された形式を取り出す（過去のデータのために一応webmを予備にする）
+            const mime = data.mimeType || 'audio/webm';
+            // 形式に合わせてURLを生成する
+            data.audioDataUrl = `data:${mime};base64,` + data.audioBytes.toBase64();
             delete data.audioBytes;
         }
         starsList.push({ id: doc.id, ...data });
@@ -309,6 +315,8 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
     if (audioBlob) {
         const arrayBuffer = await audioBlob.arrayBuffer();
         data.audioBytes = Bytes.fromUint8Array(new Uint8Array(arrayBuffer));
+        // ★追加：後で正しく再生できるように、録音した形式（mp4かwebmか等）も一緒に保存！
+        data.mimeType = audioBlob.type;
     }
 
     // Firebaseに保存

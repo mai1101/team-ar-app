@@ -5,10 +5,12 @@
 let _currentCard = null;
 let _onDelete    = null;
 let _onEdit      = null;
+let _onLike      = null;
 
-function initModal(onDelete, onEdit) {
+function initModal(onDelete, onEdit, onLike) {
   _onDelete = onDelete;
   _onEdit   = onEdit;
+  _onLike   = onLike;
 
   document.getElementById('modal-backdrop').addEventListener('click', hideChekiModal);
   document.getElementById('modal-back-btn').addEventListener('click', hideChekiModal);
@@ -23,6 +25,12 @@ function initModal(onDelete, onEdit) {
     if (!_currentCard) return;
     _onEdit && _onEdit(_currentCard);
     hideChekiModal();
+  });
+
+  document.getElementById('modal-like-btn').addEventListener('click', async () => {
+    if (!_currentCard || !_onLike) return;
+    await _onLike(_currentCard);
+    _updateLikeUI(_currentCard);
   });
 }
 
@@ -56,6 +64,11 @@ function showChekiModal(card) {
   authorEl.textContent  = card.author || '';
   if (dateEl) dateEl.textContent = _formatModalDate(card.createdAt);
 
+  // いいねUI
+  const likeRow = document.getElementById('modal-like-row');
+  if (likeRow) likeRow.classList.toggle('hidden', !!card.isPreset);
+  _updateLikeUI(card);
+
   // 自分が投稿したカードなら編集・削除ボタンを出す
   const canEdit = !card.isPreset && _isMyCard(card);
   editBtn.classList.toggle('hidden', !canEdit);
@@ -72,6 +85,15 @@ function hideChekiModal() {
 function _isMyCard(card) {
   var myId = localStorage.getItem('cottage_canvas_guest_id');
   return !!myId && card.guestId === myId;
+}
+
+function _updateLikeUI(card) {
+  var myId  = localStorage.getItem('cottage_canvas_guest_id');
+  var liked = !!(myId && card.likes && card.likes[myId]);
+  var btn   = document.getElementById('modal-like-btn');
+  var cnt   = document.getElementById('modal-like-count');
+  if (btn) btn.textContent = liked ? '❤️' : '🤍';
+  if (cnt) cnt.textContent = card.likeCount || 0;
 }
 
 function _formatModalDate(timestamp) {

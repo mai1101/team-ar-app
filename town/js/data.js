@@ -75,6 +75,8 @@ function computeCardPositions(cards) {
   const positions = {};
   Object.entries(spotGroups).forEach(([spot, group]) => {
     const base = SPOTS[spot] || { x: 0, y: 0 };
+    // いいね数昇順でスタック（多いほど手前に積む）
+    group.sort((a, b) => (a.likeCount || 0) - (b.likeCount || 0));
     group.forEach((card, i) => {
       if (card.position) {
         // ユーザーが手動配置した位置を使う
